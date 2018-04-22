@@ -19,10 +19,11 @@ def load_data(net):
                     prefix = 'output/' + key.replace('/', '_')
                     net.params[key][0].data[...] = np.fromfile(prefix + '_moving_mean.dat', dtype=np.float32)
                     net.params[key][1].data[...] = np.fromfile(prefix + '_moving_variance.dat', dtype=np.float32)
+                    net.params[key][2].data[...] = np.ones(net.params[key][2].data.shape, dtype=np.float32)
                 elif key.endswith("/scale"):
                     prefix = 'output/' + key.replace('scale','bn').replace('/', '_')
-                    net.params[key][0].data[...] = np.fromfile(prefix + '_beta.dat', dtype=np.float32)
-                    net.params[key][1].data[...] = np.fromfile(prefix + '_gamma.dat', dtype=np.float32)
+                    net.params[key][0].data[...] = np.fromfile(prefix + '_gamma.dat', dtype=np.float32)
+                    net.params[key][1].data[...] = np.fromfile(prefix + '_beta.dat', dtype=np.float32)
                 else:
                     prefix = 'output/' + key.replace('/', '_')
                     net.params[key][0].data[...] = np.fromfile(prefix + '_weights.dat', dtype=np.float32).reshape(net.params[key][0].data.shape)
