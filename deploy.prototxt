@@ -1,4 +1,4 @@
-name: "MobileNet-SSD"
+name: "MobileNetv2-SSDLite"
 input: "data"
 input_shape {
   dim: 1
@@ -31,6 +31,9 @@ layer {
   type: "BatchNorm"
   bottom: "Conv"
   top: "Conv"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -99,6 +102,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv/depthwise"
   top: "conv/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -164,6 +170,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv/project"
   top: "conv/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -223,6 +232,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_1/expand"
   top: "conv_1/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -292,6 +304,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_1/depthwise"
   top: "conv_1/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -357,6 +372,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_1/project"
   top: "conv_1/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -416,6 +434,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_2/expand"
   top: "conv_2/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -484,6 +505,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_2/depthwise"
   top: "conv_2/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -549,6 +573,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_2/project"
   top: "conv_2/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -586,16 +613,16 @@ layer {
   }
 }
 layer {
-  name: "conv_2project/sum"
+  name: "conv_2/project/sum"
   type: "Eltwise"
   bottom: "conv_1/project"
   bottom: "conv_2/project"
-  top: "conv_2project"
+  top: "conv_2/project"
 }
 layer {
   name: "conv_3/expand"
   type: "Convolution"
-  bottom: "conv_2project"
+  bottom: "conv_2/project"
   top: "conv_3/expand"
   param {
     lr_mult: 1.0
@@ -615,6 +642,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_3/expand"
   top: "conv_3/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -684,6 +714,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_3/depthwise"
   top: "conv_3/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -749,6 +782,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_3/project"
   top: "conv_3/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -808,6 +844,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_4/expand"
   top: "conv_4/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -876,6 +915,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_4/depthwise"
   top: "conv_4/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -941,6 +983,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_4/project"
   top: "conv_4/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -978,16 +1023,16 @@ layer {
   }
 }
 layer {
-  name: "conv_4project/sum"
+  name: "conv_4/project/sum"
   type: "Eltwise"
   bottom: "conv_3/project"
   bottom: "conv_4/project"
-  top: "conv_4project"
+  top: "conv_4/project"
 }
 layer {
   name: "conv_5/expand"
   type: "Convolution"
-  bottom: "conv_4project"
+  bottom: "conv_4/project"
   top: "conv_5/expand"
   param {
     lr_mult: 1.0
@@ -1007,6 +1052,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_5/expand"
   top: "conv_5/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1075,6 +1123,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_5/depthwise"
   top: "conv_5/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1140,6 +1191,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_5/project"
   top: "conv_5/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1177,16 +1231,16 @@ layer {
   }
 }
 layer {
-  name: "conv_5project/sum"
+  name: "conv_5/project/sum"
   type: "Eltwise"
-  bottom: "conv_4project"
+  bottom: "conv_4/project"
   bottom: "conv_5/project"
-  top: "conv_5project"
+  top: "conv_5/project"
 }
 layer {
   name: "conv_6/expand"
   type: "Convolution"
-  bottom: "conv_5project"
+  bottom: "conv_5/project"
   top: "conv_6/expand"
   param {
     lr_mult: 1.0
@@ -1206,6 +1260,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_6/expand"
   top: "conv_6/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1275,6 +1332,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_6/depthwise"
   top: "conv_6/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1340,6 +1400,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_6/project"
   top: "conv_6/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1399,6 +1462,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_7/expand"
   top: "conv_7/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1467,6 +1533,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_7/depthwise"
   top: "conv_7/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1532,6 +1601,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_7/project"
   top: "conv_7/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1569,16 +1641,16 @@ layer {
   }
 }
 layer {
-  name: "conv_7project/sum"
+  name: "conv_7/project/sum"
   type: "Eltwise"
   bottom: "conv_6/project"
   bottom: "conv_7/project"
-  top: "conv_7project"
+  top: "conv_7/project"
 }
 layer {
   name: "conv_8/expand"
   type: "Convolution"
-  bottom: "conv_7project"
+  bottom: "conv_7/project"
   top: "conv_8/expand"
   param {
     lr_mult: 1.0
@@ -1598,6 +1670,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_8/expand"
   top: "conv_8/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1666,6 +1741,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_8/depthwise"
   top: "conv_8/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1731,6 +1809,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_8/project"
   top: "conv_8/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1768,16 +1849,16 @@ layer {
   }
 }
 layer {
-  name: "conv_8project/sum"
+  name: "conv_8/project/sum"
   type: "Eltwise"
-  bottom: "conv_7project"
+  bottom: "conv_7/project"
   bottom: "conv_8/project"
-  top: "conv_8project"
+  top: "conv_8/project"
 }
 layer {
   name: "conv_9/expand"
   type: "Convolution"
-  bottom: "conv_8project"
+  bottom: "conv_8/project"
   top: "conv_9/expand"
   param {
     lr_mult: 1.0
@@ -1797,6 +1878,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_9/expand"
   top: "conv_9/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1865,6 +1949,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_9/depthwise"
   top: "conv_9/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1930,6 +2017,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_9/project"
   top: "conv_9/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -1967,16 +2057,16 @@ layer {
   }
 }
 layer {
-  name: "conv_9project/sum"
+  name: "conv_9/project/sum"
   type: "Eltwise"
-  bottom: "conv_8project"
+  bottom: "conv_8/project"
   bottom: "conv_9/project"
-  top: "conv_9project"
+  top: "conv_9/project"
 }
 layer {
   name: "conv_10/expand"
   type: "Convolution"
-  bottom: "conv_9project"
+  bottom: "conv_9/project"
   top: "conv_10/expand"
   param {
     lr_mult: 1.0
@@ -1996,6 +2086,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_10/expand"
   top: "conv_10/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2064,6 +2157,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_10/depthwise"
   top: "conv_10/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2129,6 +2225,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_10/project"
   top: "conv_10/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2188,6 +2287,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_11/expand"
   top: "conv_11/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2256,6 +2358,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_11/depthwise"
   top: "conv_11/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2321,6 +2426,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_11/project"
   top: "conv_11/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2358,16 +2466,16 @@ layer {
   }
 }
 layer {
-  name: "conv_11project/sum"
+  name: "conv_11/project/sum"
   type: "Eltwise"
   bottom: "conv_10/project"
   bottom: "conv_11/project"
-  top: "conv_11project"
+  top: "conv_11/project"
 }
 layer {
   name: "conv_12/expand"
   type: "Convolution"
-  bottom: "conv_11project"
+  bottom: "conv_11/project"
   top: "conv_12/expand"
   param {
     lr_mult: 1.0
@@ -2387,6 +2495,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_12/expand"
   top: "conv_12/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2455,6 +2566,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_12/depthwise"
   top: "conv_12/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2520,6 +2634,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_12/project"
   top: "conv_12/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2557,16 +2674,16 @@ layer {
   }
 }
 layer {
-  name: "conv_12project/sum"
+  name: "conv_12/project/sum"
   type: "Eltwise"
-  bottom: "conv_11project"
+  bottom: "conv_11/project"
   bottom: "conv_12/project"
-  top: "conv_12project"
+  top: "conv_12/project"
 }
 layer {
   name: "conv_13/expand"
   type: "Convolution"
-  bottom: "conv_12project"
+  bottom: "conv_12/project"
   top: "conv_13/expand"
   param {
     lr_mult: 1.0
@@ -2586,6 +2703,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_13/expand"
   top: "conv_13/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2655,6 +2775,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_13/depthwise"
   top: "conv_13/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2720,6 +2843,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_13/project"
   top: "conv_13/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2779,6 +2905,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_14/expand"
   top: "conv_14/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2847,6 +2976,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_14/depthwise"
   top: "conv_14/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2912,6 +3044,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_14/project"
   top: "conv_14/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -2949,16 +3084,16 @@ layer {
   }
 }
 layer {
-  name: "conv_14project/sum"
+  name: "conv_14/project/sum"
   type: "Eltwise"
   bottom: "conv_13/project"
   bottom: "conv_14/project"
-  top: "conv_14project"
+  top: "conv_14/project"
 }
 layer {
   name: "conv_15/expand"
   type: "Convolution"
-  bottom: "conv_14project"
+  bottom: "conv_14/project"
   top: "conv_15/expand"
   param {
     lr_mult: 1.0
@@ -2978,6 +3113,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_15/expand"
   top: "conv_15/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3046,6 +3184,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_15/depthwise"
   top: "conv_15/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3111,6 +3252,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_15/project"
   top: "conv_15/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3148,16 +3292,16 @@ layer {
   }
 }
 layer {
-  name: "conv_15project/sum"
+  name: "conv_15/project/sum"
   type: "Eltwise"
-  bottom: "conv_14project"
+  bottom: "conv_14/project"
   bottom: "conv_15/project"
-  top: "conv_15project"
+  top: "conv_15/project"
 }
 layer {
   name: "conv_16/expand"
   type: "Convolution"
-  bottom: "conv_15project"
+  bottom: "conv_15/project"
   top: "conv_16/expand"
   param {
     lr_mult: 1.0
@@ -3177,6 +3321,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_16/expand"
   top: "conv_16/expand"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3245,6 +3392,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_16/depthwise"
   top: "conv_16/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3310,6 +3460,9 @@ layer {
   type: "BatchNorm"
   bottom: "conv_16/project"
   top: "conv_16/project"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3369,6 +3522,9 @@ layer {
   type: "BatchNorm"
   bottom: "Conv_1"
   top: "Conv_1"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3434,6 +3590,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_1_2"
   top: "layer_19_1_2"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3503,6 +3662,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_2/depthwise"
   top: "layer_19_2_2/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3568,6 +3730,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_2"
   top: "layer_19_2_2"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3633,6 +3798,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_1_3"
   top: "layer_19_1_3"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3702,6 +3870,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_3/depthwise"
   top: "layer_19_2_3/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3767,6 +3938,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_3"
   top: "layer_19_2_3"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3832,6 +4006,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_1_4"
   top: "layer_19_1_4"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3901,6 +4078,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_4/depthwise"
   top: "layer_19_2_4/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -3966,6 +4146,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_4"
   top: "layer_19_2_4"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -4031,6 +4214,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_1_5"
   top: "layer_19_1_5"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -4100,6 +4286,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_5/depthwise"
   top: "layer_19_2_5/depthwise"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
@@ -4165,6 +4354,9 @@ layer {
   type: "BatchNorm"
   bottom: "layer_19_2_5"
   top: "layer_19_2_5"
+  batch_norm_param {
+    eps: 0.001
+  }
   param {
     lr_mult: 0
     decay_mult: 0
