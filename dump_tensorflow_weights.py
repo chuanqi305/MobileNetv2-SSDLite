@@ -1,6 +1,7 @@
 import tensorflow as tf
 import cv2
 import numpy as np
+import os
 
 def graph_create(graphpath):
     with tf.gfile.FastGFile(graphpath, 'r') as graphfile:
@@ -15,6 +16,9 @@ def graph_create(graphpath):
 #caffe:      o, i, h, w
 #            3, 2, 0, 1
 graph_create("ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb")
+if not os.path.exists('output'):
+    os.mkdir('output')
+
 with tf.Session() as sess:
     tensors = [tensor for tensor in tf.get_default_graph().as_graph_def().node]
     for t in tensors:
