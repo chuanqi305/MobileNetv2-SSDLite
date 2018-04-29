@@ -440,7 +440,7 @@ layer {
 
     def conv(self, name, out, kernel, stride=1, group=1, bias=False, bottom=None):
 
-      if self.stage == "deploy": #for deploy, merge bn to bias, so bias must be true
+      if self.stage == "deploy" and self.nobn: #for deploy, merge bn to bias, so bias must be true
           bias = True
 
       if bottom is None:
@@ -491,14 +491,17 @@ layer {
       self.last = name
     
     def bn(self, name):
-      if self.stage == "deploy":  #deploy does not need bn, you can use merge_bn.py to generate a new caffemodel
+      if self.stage == "deploy" and self.nobn:  #deploy does not need bn, you can use merge_bn.py to generate a new caffemodel
          return
+      eps_str = ""
+      if self.eps != 1e-5:
+          eps_str = "\n  batch_norm_param {\n    eps: 0.001\n  }"
       print(
 """layer {
   name: "%s/bn"
   type: "BatchNorm"
   bottom: "%s"
-  top: "%s"
+  top: "%s"%s
   param {
     lr_mult: 0
     decay_mult: 0
@@ -534,17 +537,20 @@ layer {
       value: 0
     }
   }
-}""" % (name,name,name,name,name,name))
+}""" % (name,name,name,eps_str,name,name,name))
       self.last = name
     
     def relu(self, name):
+      relu_str = "ReLU"
+      if self.relu6:
+         relu_str = "ReLU6"
       print(
 """layer {
   name: "%s/relu"
-  type: "ReLU"
+  type: "%s"
   bottom: "%s"
   top: "%s"
-}""" % (name, name, name))
+}""" % (name, relu_str, name, name))
       self.last
       self.last = name
     
@@ -572,7 +578,7 @@ layer {
       self.conv_depthwise(name + '/depthwise', t * inp, stride)
       if sc:
          self.conv_project(name + '/project', t * inp, outp)
-         self.shortcut(last_block, name + 'project')
+         self.shortcut(last_block, name + '/project')
       else:
          self.conv_project(name + '/project', t * inp, outp)
     
@@ -739,11 +745,14 @@ layer {
 }""" % ( name, self.last, name, output))
       self.last = name
 
-    def generate(self, stage, gen_ssd, size, class_num):
+    def generate(self, stage, gen_ssd, size, class_num, nobn, eps, relu6):
       self.class_num = class_num
       self.lmdb = FLAGS.lmdb
       self.label_map = FLAGS.label_map
       self.stage = stage
+      self.nobn = nobn
+      self.eps = eps
+      self.relu6 = relu6
       if gen_ssd:
           self.input_size = 300
       else:
@@ -857,6 +866,22 @@ if __name__ == '__main__':
       required=True,
       help='Output class number, include the \'backgroud\' class. e.g. 21 for voc.'
   )
+  parser.add_argument(
+      '--no_batchnorm',
+      action='store_true',
+      help='for deploy, generate a deploy.prototxt without batchnorm and scale'
+  )
+  parser.add_argument(
+      '--eps',
+      type=float,
+      default=1e-5,
+      help='eps parameter of BatchNorm layers, default is 1e-5'
+  )
+  parser.add_argument(
+      '--relu6',
+      action='store_true',
+      help='replace ReLU layers by ReLU6'
+  )
   FLAGS, unparsed = parser.parse_known_args()
   gen = Generator()
-  gen.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num)
+  gen.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num, FLAGS.no_batchnorm, FLAGS.eps, FLAGS.relu6)
