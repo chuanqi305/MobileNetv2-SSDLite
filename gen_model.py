@@ -578,7 +578,7 @@ layer {
       self.conv_depthwise(name + '/depthwise', t * inp, stride)
       if sc:
          self.conv_project(name + '/project', t * inp, outp)
-         self.shortcut(last_block, name + '/project')
+         self.shortcut(last_block, name)
       else:
          self.conv_project(name + '/project', t * inp, outp)
     
