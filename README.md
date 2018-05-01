@@ -18,4 +18,5 @@ There are some differences between caffe and tensorflow implementation:
 1. The padding method 'SAME' in tensorflow sometimes use the [0, 0, 1, 1] paddings, means that top=0, left=0, bottom=1, right=1 padding. In caffe, there is no parameters can be used to do that kind of padding.
 2. MobileNet on Tensorflow use ReLU6 layer y = min(max(x, 0), 6), but caffe has no ReLU6 layer.
 
-Under these circumstances, the detection result of converted model can not be very exact, so I will do some finetuning to recover the precision in the next few days.
+The original/deploy.prototxt shows a exactly same version with tensorflow, and you can use my [tensorflow-compatible ssd](https://github.com/chuanqi305/ssd) to see the result.
+After that, I will do some finetuning on the converted model to make it work on original ssd in the next few days.
