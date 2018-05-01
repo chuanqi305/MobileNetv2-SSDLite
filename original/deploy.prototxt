@@ -10,7 +10,7 @@ layer {
   name: "Conv"
   type: "Convolution"
   bottom: "data"
-  top: "Conv"
+  top: "Conv/pad"
   param {
     lr_mult: 1.0
     decay_mult: 1.0
@@ -18,14 +18,35 @@ layer {
   convolution_param {
     num_output: 32
     bias_term: false
-    pad: 1
+    pad: 2
     kernel_size: 3
     stride: 2
-    tf_pad: SAME
-    engine: CAFFE
+    #engine: CAFFE
     weight_filler {
       type: "msra"
     }
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "Conv/pad"
+  top: "Conv/margin1"
+  top: "Conv/tmp"
+  slice_param {
+    axis: 2
+    slice_point: 1
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "Conv/tmp"
+  top: "Conv/margin2"
+  top: "Conv"
+  slice_param {
+    axis: 3
+    slice_point: 1
   }
 }
 layer {
@@ -283,7 +304,7 @@ layer {
   name: "conv_1/depthwise"
   type: "Convolution"
   bottom: "conv_1/expand"
-  top: "conv_1/depthwise"
+  top: "conv_1/depthwise/pad"
   param {
     lr_mult: 1.0
     decay_mult: 1.0
@@ -291,15 +312,36 @@ layer {
   convolution_param {
     num_output: 96
     bias_term: false
-    pad: 1
+    pad: 2
     kernel_size: 3
     stride: 2
-    tf_pad: SAME
     group: 96
-    engine: CAFFE
+    #engine: CAFFE
     weight_filler {
       type: "msra"
     }
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "conv_1/depthwise/pad"
+  top: "conv_1/depthwise/margin1"
+  top: "conv_1/depthwise/tmp"
+  slice_param {
+    axis: 2
+    slice_point: 1
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "conv_1/depthwise/tmp"
+  top: "conv_1/depthwise/margin2"
+  top: "conv_1/depthwise"
+  slice_param {
+    axis: 3
+    slice_point: 1
   }
 }
 layer {
@@ -1312,7 +1354,7 @@ layer {
   name: "conv_6/depthwise"
   type: "Convolution"
   bottom: "conv_6/expand"
-  top: "conv_6/depthwise"
+  top: "conv_6/depthwise/pad"
   param {
     lr_mult: 1.0
     decay_mult: 1.0
@@ -1320,15 +1362,36 @@ layer {
   convolution_param {
     num_output: 192
     bias_term: false
-    pad: 1
+    pad: 2
     kernel_size: 3
     stride: 2
-    tf_pad: SAME
     group: 192
-    engine: CAFFE
+    #engine: CAFFE
     weight_filler {
       type: "msra"
     }
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "conv_6/depthwise/pad"
+  top: "conv_6/depthwise/margin1"
+  top: "conv_6/depthwise/tmp"
+  slice_param {
+    axis: 2
+    slice_point: 1
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "conv_6/depthwise/tmp"
+  top: "conv_6/depthwise/margin2"
+  top: "conv_6/depthwise"
+  slice_param {
+    axis: 3
+    slice_point: 1
   }
 }
 layer {
@@ -3643,7 +3706,7 @@ layer {
   name: "layer_19_2_2/depthwise"
   type: "Convolution"
   bottom: "layer_19_1_2"
-  top: "layer_19_2_2/depthwise"
+  top: "layer_19_2_2/depthwise/pad"
   param {
     lr_mult: 1.0
     decay_mult: 1.0
@@ -3651,15 +3714,36 @@ layer {
   convolution_param {
     num_output: 256
     bias_term: false
-    pad: 1
+    pad: 2
     kernel_size: 3
     stride: 2
-    tf_pad: SAME
     group: 256
-    engine: CAFFE
+    #engine: CAFFE
     weight_filler {
       type: "msra"
     }
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "layer_19_2_2/depthwise/pad"
+  top: "layer_19_2_2/depthwise/margin1"
+  top: "layer_19_2_2/depthwise/tmp"
+  slice_param {
+    axis: 2
+    slice_point: 1
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "layer_19_2_2/depthwise/tmp"
+  top: "layer_19_2_2/depthwise/margin2"
+  top: "layer_19_2_2/depthwise"
+  slice_param {
+    axis: 3
+    slice_point: 1
   }
 }
 layer {
@@ -4268,7 +4352,7 @@ layer {
   name: "layer_19_2_5/depthwise"
   type: "Convolution"
   bottom: "layer_19_1_5"
-  top: "layer_19_2_5/depthwise"
+  top: "layer_19_2_5/depthwise/pad"
   param {
     lr_mult: 1.0
     decay_mult: 1.0
@@ -4276,15 +4360,36 @@ layer {
   convolution_param {
     num_output: 64
     bias_term: false
-    pad: 1
+    pad: 2
     kernel_size: 3
     stride: 2
-    tf_pad: SAME
     group: 64
-    engine: CAFFE
+    #engine: CAFFE
     weight_filler {
       type: "msra"
     }
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "layer_19_2_5/depthwise/pad"
+  top: "layer_19_2_5/depthwise/margin1"
+  top: "layer_19_2_5/depthwise/tmp"
+  slice_param {
+    axis: 2
+    slice_point: 1
+  }
+}
+layer {
+  name: "slice"
+  type: "Slice"
+  bottom: "layer_19_2_5/depthwise/tmp"
+  top: "layer_19_2_5/depthwise/margin2"
+  top: "layer_19_2_5/depthwise"
+  slice_param {
+    axis: 3
+    slice_point: 1
   }
 }
 layer {
@@ -5173,7 +5278,7 @@ layer {
     share_location: true
     background_label_id: 0
     nms_param {
-      nms_threshold: 0.45
+      nms_threshold: 0.6
       top_k: 100
     }
     code_type: CENTER_SIZE

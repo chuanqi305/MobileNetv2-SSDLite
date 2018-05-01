@@ -4638,7 +4638,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }
 layer {
@@ -4752,7 +4752,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }
 layer {
@@ -4866,7 +4866,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }
 layer {
@@ -4980,7 +4980,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }
 layer {
@@ -5094,7 +5094,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }
 layer {
@@ -5208,7 +5208,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }
 layer {

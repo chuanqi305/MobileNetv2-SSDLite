@@ -444,7 +444,7 @@ layer {
           padstr = "\n    pad: %d" % (kernel / 2)
       groupstr = ""
       if group > 1:
-          groupstr = "\n    group: %d\n    engine: CAFFE" % group
+          groupstr = "\n    group: %d\n    #engine: CAFFE" % group
       stridestr = ""
       if stride > 1:
           stridestr = "\n    stride: %d" % stride 
@@ -685,7 +685,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.0
+    offset: 0.5
   }
 }""" % (name, name, name, float(min_box), max_box_str, aspect_ratio_str))
 
