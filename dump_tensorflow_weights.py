@@ -60,8 +60,15 @@ with tf.Session() as sess:
                  new_weights = np.zeros(tmp.shape, dtype=np.float32)
                  #tf order:    [y, x, h, w]
                  #caffe order: [x, y, w, h]
-                 new_weights[:, 0] = tmp[:, 1]
-                 new_weights[:, 1] = tmp[:, 0]
+                 if t.name == 'BoxPredictor_0/BoxEncodingPredictor/weights':
+                     #caffe first box layer [(0.2, 1.0), (0.2, 2.0), (0.2, 0.5)]
+                     #tf first box layer    [(0.1, 1.0), (0.2, 2.0), (0.2, 0.5)]
+                     #adjust the box by weights and bias change
+                     new_weights[:, 0] = tmp[:, 1] * 0.5
+                     new_weights[:, 1] = tmp[:, 0] * 0.5
+                 else:
+                     new_weights[:, 0] = tmp[:, 1]
+                     new_weights[:, 1] = tmp[:, 0]
                  new_weights[:, 2] = tmp[:, 3]
                  new_weights[:, 3] = tmp[:, 2]
                  caffe_weights = new_weights.reshape(origin_shape).copy()
@@ -79,7 +86,6 @@ with tf.Session() as sess:
                      new_weights[4] = tmp[3]
                      new_weights[5] = tmp[4]
                      caffe_weights = new_weights.reshape(origin_shape).copy()
-                 print "converted"
              caffe_weights.tofile('output/' + output_name + '.dat')
              print caffe_weights.shape
          else:
@@ -114,8 +120,8 @@ with tf.Session() as sess:
                  elif t.name == 'BoxPredictor_0/BoxEncodingPredictor/biases':
                      #caffe first box layer [(0.2, 1.0), (0.2, 2.0), (0.2, 0.5)]
                      #tf first box layer    [(0.1, 1.0), (0.2, 2.0), (0.2, 0.5)]
-                     #adjust the box by bias change
-                     new_bias[0,:2] = tmp[0,:2]
+                     #adjust the box by weights and bias change
+                     new_bias[0,:2] = tmp[0,:2] * 0.5
                      new_bias[0,2] = tmp[0,2] + (np.log(0.5) / 0.2)
                      new_bias[0,3] = tmp[0,3] + (np.log(0.5) / 0.2)
                      new_bias[1] = tmp[1]
