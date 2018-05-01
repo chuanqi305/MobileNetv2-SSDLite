@@ -257,18 +257,15 @@ layer{
   }
 }
 layer {
-  name: "mbox_conf_softmax"
-  type: "Softmax"
+  name: "mbox_conf_sigmoid"
+  type: "Sigmoid"
   bottom: "mbox_conf_reshape"
-  top: "mbox_conf_softmax"
-  softmax_param {
-    axis: 2
-  }
+  top: "mbox_conf_sigmoid"
 }
 layer {
   name: "mbox_conf_flatten"
   type: "Flatten"
-  bottom: "mbox_conf_softmax"
+  bottom: "mbox_conf_sigmoid"
   top: "mbox_conf_flatten"
   flatten_param {
     axis: 1
@@ -314,18 +311,15 @@ layer {
   }
 }
 layer {
-  name: "mbox_conf_softmax"
-  type: "Softmax"
+  name: "mbox_conf_sigmoid"
+  type: "Sigmoid"
   bottom: "mbox_conf_reshape"
-  top: "mbox_conf_softmax"
-  softmax_param {
-    axis: 2
-  }
+  top: "mbox_conf_sigmoid"
 }
 layer {
   name: "mbox_conf_flatten"
   type: "Flatten"
-  bottom: "mbox_conf_softmax"
+  bottom: "mbox_conf_sigmoid"
   top: "mbox_conf_flatten"
   flatten_param {
     axis: 1
@@ -393,7 +387,7 @@ layer {
   }
   multibox_loss_param {
     loc_loss_type: SMOOTH_L1
-    conf_loss_type: SOFTMAX
+    conf_loss_type: LOGISTIC
     loc_weight: 1.0
     num_classes: %d
     share_location: true
@@ -691,7 +685,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }""" % (name, name, name, float(min_box), max_box_str, aspect_ratio_str))
 

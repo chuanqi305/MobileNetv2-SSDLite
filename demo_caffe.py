@@ -31,7 +31,6 @@ def postprocess(img, out):
     h = img.shape[0]
     w = img.shape[1]
     box = out['detection_out'][0,0,:,3:7] * np.array([w, h, w, h])
-    box = out['detection_out'][0,0,:,3:7] * np.array([h, w, h, w])
 
     cls = out['detection_out'][0,0,:,1]
     conf = out['detection_out'][0,0,:,2]

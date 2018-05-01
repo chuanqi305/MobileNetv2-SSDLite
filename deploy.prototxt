@@ -4508,7 +4508,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }
 layer {
@@ -4622,7 +4622,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }
 layer {
@@ -4736,7 +4736,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }
 layer {
@@ -4850,7 +4850,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }
 layer {
@@ -4964,7 +4964,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }
 layer {
@@ -5078,7 +5078,7 @@ layer {
     variance: 0.1
     variance: 0.2
     variance: 0.2
-    offset: 0.5
+    offset: 0.0
   }
 }
 layer {
@@ -5137,18 +5137,15 @@ layer {
   }
 }
 layer {
-  name: "mbox_conf_softmax"
-  type: "Softmax"
+  name: "mbox_conf_sigmoid"
+  type: "Sigmoid"
   bottom: "mbox_conf_reshape"
-  top: "mbox_conf_softmax"
-  softmax_param {
-    axis: 2
-  }
+  top: "mbox_conf_sigmoid"
 }
 layer {
   name: "mbox_conf_flatten"
   type: "Flatten"
-  bottom: "mbox_conf_softmax"
+  bottom: "mbox_conf_sigmoid"
   top: "mbox_conf_flatten"
   flatten_param {
     axis: 1

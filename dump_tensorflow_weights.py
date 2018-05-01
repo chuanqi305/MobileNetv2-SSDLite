@@ -48,31 +48,78 @@ with tf.Session() as sess:
          
          if len(data.shape) == 4:
              caffe_weights = data.transpose(3, 2, 0, 1)
+             origin_shape = caffe_weights.shape
+             boxes = 0
              if output_name.find('BoxEncodingPredictor') != -1:
-                 origin_shape = caffe_weights.shape
-                 n = caffe_bias.shape[0] / 4
-                 tmp = caffe_weights.reshape(n, 4, -1)
+                 boxes = caffe_weights.shape[0] / 4
+             elif output_name.find('ClassPredictor') != -1:
+                 boxes = caffe_weights.shape[0] / 91
+
+             if output_name.find('BoxEncodingPredictor') != -1:
+                 tmp = caffe_weights.reshape(boxes, 4, -1).copy()
                  new_weights = np.zeros(tmp.shape, dtype=np.float32)
-                 new_weights[:,0] = tmp[:, 1]
-                 new_weights[:,1] = tmp[:, 0]
-                 new_weights[:,2] = tmp[:, 3]
-                 new_weights[:,3] = tmp[:, 2]
-                 print new_weights.shape
-                 caffe_weights = new_weights.reshape(origin_shape)
+                 #tf order:    [y, x, h, w]
+                 #caffe order: [x, y, w, h]
+                 new_weights[:, 0] = tmp[:, 1]
+                 new_weights[:, 1] = tmp[:, 0]
+                 new_weights[:, 2] = tmp[:, 3]
+                 new_weights[:, 3] = tmp[:, 2]
+                 caffe_weights = new_weights.reshape(origin_shape).copy()
+             if output_name.find('BoxEncodingPredictor') != -1 or \
+                 output_name.find('ClassPredictor') != -1:
+                 tmp = caffe_weights.reshape(boxes, -1).copy()
+                 new_weights = np.zeros(tmp.shape, dtype=np.float32)
+                 #tf aspect ratio:   [1, 2, 3, 0.5, 0.333333333, 1]
+                 #caffe aspect ratio:[1, 1, 2, 3, 0.5, 0.333333333]
+                 if boxes == 6:
+                     new_weights[0] = tmp[0]
+                     new_weights[1] = tmp[5]
+                     new_weights[2] = tmp[1]
+                     new_weights[3] = tmp[2]
+                     new_weights[4] = tmp[3]
+                     new_weights[5] = tmp[4]
+                     caffe_weights = new_weights.reshape(origin_shape).copy()
                  print "converted"
              caffe_weights.tofile('output/' + output_name + '.dat')
              print caffe_weights.shape
          else:
              caffe_bias = data
+             boxes = 0
              if output_name.find('BoxEncodingPredictor') != -1:
-                 n = caffe_bias.shape[0] / 4
-                 tmp = caffe_bias.reshape(n, 4, -1).copy()
+                 boxes = caffe_bias.shape[0] / 4
+             elif output_name.find('ClassPredictor') != -1:
+                 boxes = caffe_bias.shape[0] / 91
+             if output_name.find('BoxEncodingPredictor') != -1:
+                 tmp = caffe_bias.reshape(boxes, 4).copy()
                  new_bias = np.zeros(tmp.shape, dtype=np.float32)
-                 new_bias[:,0] = tmp[:,1]
-                 new_bias[:,1] = tmp[:,0]
-                 new_bias[:,2] = tmp[:,3]
-                 new_bias[:,3] = tmp[:,2]
-                 print new_bias.shape
-                 caffe_bias = new_bias.flatten()
+                 new_bias[:, 0] = tmp[:, 1]
+                 new_bias[:, 1] = tmp[:, 0]
+                 new_bias[:, 2] = tmp[:, 3]
+                 new_bias[:, 3] = tmp[:, 2]
+                 caffe_bias = new_bias.flatten().copy()
+
+             if output_name.find('BoxEncodingPredictor') != -1 or \
+                 output_name.find('ClassPredictor') != -1:
+                 tmp = caffe_bias.reshape(boxes, -1).copy()
+                 new_bias = np.zeros(tmp.shape, dtype=np.float32)
+                 if boxes == 6:
+                     new_bias[0] = tmp[0]
+                     new_bias[1] = tmp[5]
+                     new_bias[2] = tmp[1]
+                     new_bias[3] = tmp[2]
+                     new_bias[4] = tmp[3]
+                     new_bias[5] = tmp[4]
+                     print new_bias.shape
+                     caffe_bias = new_bias.flatten()
+                 elif t.name == 'BoxPredictor_0/BoxEncodingPredictor/biases':
+                     #caffe first box layer [(0.2, 1.0), (0.2, 2.0), (0.2, 0.5)]
+                     #tf first box layer    [(0.1, 1.0), (0.2, 2.0), (0.2, 0.5)]
+                     #adjust the box by bias change
+                     new_bias[0,:2] = tmp[0,:2]
+                     new_bias[0,2] = tmp[0,2] + (np.log(0.5) / 0.2)
+                     new_bias[0,3] = tmp[0,3] + (np.log(0.5) / 0.2)
+                     new_bias[1] = tmp[1]
+                     new_bias[2] = tmp[2]
+                     caffe_bias = new_bias.flatten()
              caffe_bias.tofile('output/' + output_name + '.dat')
 
