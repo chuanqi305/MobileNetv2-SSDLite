@@ -11,6 +11,7 @@ python gen_model.py -s deploy -l labelmap_coco.prototxt -d trainval_lmdb -c 91 >
 2. Use dump_tensorflow_weights.py to dump the weights of conv layer and batchnorm layer.
 3. Use load_caffe_weights.py to load the dumped weights to deploy.caffemodel.
 4. Use the code in src to accelerate your training if you have a cudnn7, or add "engine: CAFFE" to your depthwise convolution layer to solve the memory issue.
+5. Maybe you need deploy.caffemodel for VOC dataset, use coco2voc.py to get it.
 
 ### Note
 There are some differences between caffe and tensorflow implementation:
