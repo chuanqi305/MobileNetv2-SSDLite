@@ -5,8 +5,7 @@ caffe_root = '/home/yaochuanqi/work/ssd/caffe/'
 sys.path.insert(0, caffe_root + 'python')  
 import caffe  
 
-
-net_file= 'deploy_voc.prototxt'  
+net_file= 'voc/deploy.prototxt'  
 caffe_model='deploy_voc.caffemodel'  
 test_dir = "images"
 

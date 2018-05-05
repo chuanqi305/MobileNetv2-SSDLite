@@ -1,0 +1,455 @@
+item {
+  name: "none_of_the_above"
+  label: 0
+  display_name: "background"
+}
+item {
+  name: "person"
+  label: 1
+  display_name: "person"
+}
+item {
+  name: "bicycle"
+  label: 2
+  display_name: "bicycle"
+}
+item {
+  name: "car"
+  label: 3
+  display_name: "car"
+}
+item {
+  name: "motorcycle"
+  label: 4
+  display_name: "motorcycle"
+}
+item {
+  name: "airplane"
+  label: 5
+  display_name: "airplane"
+}
+item {
+  name: "bus"
+  label: 6
+  display_name: "bus"
+}
+item {
+  name: "train"
+  label: 7
+  display_name: "train"
+}
+item {
+  name: "truck"
+  label: 8
+  display_name: "truck"
+}
+item {
+  name: "boat"
+  label: 9
+  display_name: "boat"
+}
+item {
+  name: "traffic light"
+  label: 10
+  display_name: "traffic light"
+}
+item {
+  name: "fire hydrant"
+  label: 11
+  display_name: "fire hydrant"
+}
+item {
+  name: "N/A"
+  label: 12
+  display_name: "N/A"
+}
+item {
+  name: "stop sign"
+  label: 13
+  display_name: "stop sign"
+}
+item {
+  name: "parking meter"
+  label: 14
+  display_name: "parking meter"
+}
+item {
+  name: "bench"
+  label: 15
+  display_name: "bench"
+}
+item {
+  name: "bird"
+  label: 16
+  display_name: "bird"
+}
+item {
+  name: "cat"
+  label: 17
+  display_name: "cat"
+}
+item {
+  name: "dog"
+  label: 18
+  display_name: "dog"
+}
+item {
+  name: "horse"
+  label: 19
+  display_name: "horse"
+}
+item {
+  name: "sheep"
+  label: 20
+  display_name: "sheep"
+}
+item {
+  name: "cow"
+  label: 21
+  display_name: "cow"
+}
+item {
+  name: "elephant"
+  label: 22
+  display_name: "elephant"
+}
+item {
+  name: "bear"
+  label: 23
+  display_name: "bear"
+}
+item {
+  name: "zebra"
+  label: 24
+  display_name: "zebra"
+}
+item {
+  name: "giraffe"
+  label: 25
+  display_name: "giraffe"
+}
+item {
+  name: "N/A"
+  label: 26
+  display_name: "N/A"
+}
+item {
+  name: "backpack"
+  label: 27
+  display_name: "backpack"
+}
+item {
+  name: "umbrella"
+  label: 28
+  display_name: "umbrella"
+}
+item {
+  name: "N/A"
+  label: 29
+  display_name: "N/A"
+}
+item {
+  name: "N/A"
+  label: 30
+  display_name: "N/A"
+}
+item {
+  name: "handbag"
+  label: 31
+  display_name: "handbag"
+}
+item {
+  name: "tie"
+  label: 32
+  display_name: "tie"
+}
+item {
+  name: "suitcase"
+  label: 33
+  display_name: "suitcase"
+}
+item {
+  name: "frisbee"
+  label: 34
+  display_name: "frisbee"
+}
+item {
+  name: "skis"
+  label: 35
+  display_name: "skis"
+}
+item {
+  name: "snowboard"
+  label: 36
+  display_name: "snowboard"
+}
+item {
+  name: "sports ball"
+  label: 37
+  display_name: "sports ball"
+}
+item {
+  name: "kite"
+  label: 38
+  display_name: "kite"
+}
+item {
+  name: "baseball bat"
+  label: 39
+  display_name: "baseball bat"
+}
+item {
+  name: "baseball glove"
+  label: 40
+  display_name: "baseball glove"
+}
+item {
+  name: "skateboard"
+  label: 41
+  display_name: "skateboard"
+}
+item {
+  name: "surfboard"
+  label: 42
+  display_name: "surfboard"
+}
+item {
+  name: "tennis racket"
+  label: 43
+  display_name: "tennis racket"
+}
+item {
+  name: "bottle"
+  label: 44
+  display_name: "bottle"
+}
+item {
+  name: "N/A"
+  label: 45
+  display_name: "N/A"
+}
+item {
+  name: "wine glass"
+  label: 46
+  display_name: "wine glass"
+}
+item {
+  name: "cup"
+  label: 47
+  display_name: "cup"
+}
+item {
+  name: "fork"
+  label: 48
+  display_name: "fork"
+}
+item {
+  name: "knife"
+  label: 49
+  display_name: "knife"
+}
+item {
+  name: "spoon"
+  label: 50
+  display_name: "spoon"
+}
+item {
+  name: "bowl"
+  label: 51
+  display_name: "bowl"
+}
+item {
+  name: "banana"
+  label: 52
+  display_name: "banana"
+}
+item {
+  name: "apple"
+  label: 53
+  display_name: "apple"
+}
+item {
+  name: "sandwich"
+  label: 54
+  display_name: "sandwich"
+}
+item {
+  name: "orange"
+  label: 55
+  display_name: "orange"
+}
+item {
+  name: "broccoli"
+  label: 56
+  display_name: "broccoli"
+}
+item {
+  name: "carrot"
+  label: 57
+  display_name: "carrot"
+}
+item {
+  name: "hot dog"
+  label: 58
+  display_name: "hot dog"
+}
+item {
+  name: "pizza"
+  label: 59
+  display_name: "pizza"
+}
+item {
+  name: "donut"
+  label: 60
+  display_name: "donut"
+}
+item {
+  name: "cake"
+  label: 61
+  display_name: "cake"
+}
+item {
+  name: "chair"
+  label: 62
+  display_name: "chair"
+}
+item {
+  name: "couch"
+  label: 63
+  display_name: "couch"
+}
+item {
+  name: "potted plant"
+  label: 64
+  display_name: "potted plant"
+}
+item {
+  name: "bed"
+  label: 65
+  display_name: "bed"
+}
+item {
+  name: "N/A"
+  label: 66
+  display_name: "N/A"
+}
+item {
+  name: "dining table"
+  label: 67
+  display_name: "dining table"
+}
+item {
+  name: "N/A"
+  label: 68
+  display_name: "N/A"
+}
+item {
+  name: "N/A"
+  label: 69
+  display_name: "N/A"
+}
+item {
+  name: "toilet"
+  label: 70
+  display_name: "toilet"
+}
+item {
+  name: "N/A"
+  label: 71
+  display_name: "N/A"
+}
+item {
+  name: "tv"
+  label: 72
+  display_name: "tv"
+}
+item {
+  name: "laptop"
+  label: 73
+  display_name: "laptop"
+}
+item {
+  name: "mouse"
+  label: 74
+  display_name: "mouse"
+}
+item {
+  name: "remote"
+  label: 75
+  display_name: "remote"
+}
+item {
+  name: "keyboard"
+  label: 76
+  display_name: "keyboard"
+}
+item {
+  name: "cell phone"
+  label: 77
+  display_name: "cell phone"
+}
+item {
+  name: "microwave"
+  label: 78
+  display_name: "microwave"
+}
+item {
+  name: "oven"
+  label: 79
+  display_name: "oven"
+}
+item {
+  name: "toaster"
+  label: 80
+  display_name: "toaster"
+}
+item {
+  name: "sink"
+  label: 81
+  display_name: "sink"
+}
+item {
+  name: "refrigerator"
+  label: 82
+  display_name: "refrigerator"
+}
+item {
+  name: "N/A"
+  label: 83
+  display_name: "N/A"
+}
+item {
+  name: "book"
+  label: 84
+  display_name: "book"
+}
+item {
+  name: "clock"
+  label: 85
+  display_name: "clock"
+}
+item {
+  name: "vase"
+  label: 86
+  display_name: "vase"
+}
+item {
+  name: "scissors"
+  label: 87
+  display_name: "scissors"
+}
+item {
+  name: "teddy bear"
+  label: 88
+  display_name: "teddy bear"
+}
+item {
+  name: "hair drier"
+  label: 89
+  display_name: "hair drier"
+}
+item {
+  name: "toothbrush"
+  label: 90
+  display_name: "toothbrush"
+}

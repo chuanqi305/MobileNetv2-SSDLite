@@ -6,14 +6,14 @@ sys.path.insert(0, caffe_root + 'python')
 import caffe  
 
 
-net_file= 'original/deploy.prototxt'
+net_file= 'coco/deploy.prototxt'
 caffe_model='deploy.caffemodel'  
 test_dir = "images"
 
 caffe.set_mode_gpu()
 net = caffe.Net(net_file,caffe_model,caffe.TEST)  
 
-CLASSES = ("backgroud" , "person" , "bicycle" , "car" , "motorcycle" , 
+COCO_CLASSES = ("background" , "person" , "bicycle" , "car" , "motorcycle" , 
      "airplane" , "bus" , "train" , "truck" , "boat" , "traffic light",
      "fire hydrant", "N/A" , "stop sign", "parking meter", "bench" , 
      "bird" , "cat" , "dog" , "horse" , "sheep" , "cow" , "elephant" , 
@@ -29,7 +29,6 @@ CLASSES = ("backgroud" , "person" , "bicycle" , "car" , "motorcycle" ,
      "microwave" , "oven" , "toaster" , "sink" , "refrigerator" , "N/A" ,
      "book" , "clock" , "vase" , "scissors" , "teddy bear", "hair drier",
      "toothbrush" )
-
 
 def preprocess(src):
     img = cv2.resize(src, (300,300))
@@ -62,7 +61,7 @@ def detect(imgfile):
        p2 = (box[i][2], box[i][3])
        cv2.rectangle(origimg, p1, p2, (0,255,0))
        p3 = (max(p1[0], 15), max(p1[1], 15))
-       title = "%s:%.2f" % (CLASSES[int(cls[i])], conf[i])
+       title = "%s:%.2f" % (COCO_CLASSES[int(cls[i])], conf[i])
        cv2.putText(origimg, title, p3, cv2.FONT_ITALIC, 0.6, (0, 255, 0), 1)
     cv2.imshow("SSD", origimg)
  

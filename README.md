@@ -1,22 +1,23 @@
 # MobileNetv2-SSDLite
 Caffe implementation of SSD detection on MobileNetv2, converted from tensorflow.
 
+### Prerequisites
+Tensorflow and Caffe version [SSD](https://github.com/weiliu89/caffe) is properly installed on your computer.
+
 ### Usage
 0. Firstly you should download the original model from [tensorflow](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md).
 1. Use gen_model.py to generate the train.prototxt and deploy.prototxt (or use the default prototxt).
 ```
-python gen_model.py -s train -l labelmap_coco.prototxt -d trainval_lmdb -c 91 >train.prototxt
-python gen_model.py -s deploy -l labelmap_coco.prototxt -d trainval_lmdb -c 91 >deploy.prototxt
+python gen_model.py -s deploy -c 91 >deploy.prototxt
 ```
 2. Use dump_tensorflow_weights.py to dump the weights of conv layer and batchnorm layer.
 3. Use load_caffe_weights.py to load the dumped weights to deploy.caffemodel.
 4. Use the code in src to accelerate your training if you have a cudnn7, or add "engine: CAFFE" to your depthwise convolution layer to solve the memory issue.
-5. Maybe you need deploy.caffemodel for VOC dataset, use coco2voc.py to get it.
+5. The original tensorflow model is trained on MSCOCO dataset, maybe you need deploy.caffemodel for VOC dataset, use coco2voc.py to get deploy_voc.caffemodel.
 
 ### Note
 There are some differences between caffe and tensorflow implementation:
 1. The padding method 'SAME' in tensorflow sometimes use the [0, 0, 1, 1] paddings, means that top=0, left=0, bottom=1, right=1 padding. In caffe, there is no parameters can be used to do that kind of padding.
 2. MobileNet on Tensorflow use ReLU6 layer y = min(max(x, 0), 6), but caffe has no ReLU6 layer.
 
-The original/deploy.prototxt shows a exactly same version with tensorflow, and you can use my [tensorflow-compatible ssd](https://github.com/chuanqi305/ssd) to see the result.
-After that, I will do some finetuning on the converted model to make it work on original ssd in the next few days.
+

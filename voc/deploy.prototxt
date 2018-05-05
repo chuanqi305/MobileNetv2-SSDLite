@@ -4511,6 +4511,21 @@ layer {
   top: "layer_19_2_5"
 }
 layer {
+  name: "silence"
+  type: "Silence"
+  bottom: "Conv/margin1"
+  bottom: "Conv/margin2"
+  bottom: "conv_1/depthwise/margin1"
+  bottom: "conv_1/depthwise/margin2"
+  bottom: "conv_6/depthwise/margin1"
+  bottom: "conv_6/depthwise/margin2"
+  bottom: "layer_19_2_2/depthwise/margin1"
+  bottom: "layer_19_2_2/depthwise/margin2"
+  bottom: "layer_19_2_5/depthwise/margin1"
+  bottom: "layer_19_2_5/depthwise/margin2"
+}
+#==========SSD layers===========
+layer {
   name: "conv_13/expand_mbox_loc"
   type: "Convolution"
   bottom: "conv_13/expand"
@@ -4571,7 +4586,7 @@ layer {
     decay_mult: 0.0
   }
   convolution_param {
-    num_output: 273
+    num_output: 63
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -4684,7 +4699,7 @@ layer {
     decay_mult: 0.0
   }
   convolution_param {
-    num_output: 546
+    num_output: 126
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -4798,7 +4813,7 @@ layer {
     decay_mult: 0.0
   }
   convolution_param {
-    num_output: 546
+    num_output: 126
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -4912,7 +4927,7 @@ layer {
     decay_mult: 0.0
   }
   convolution_param {
-    num_output: 546
+    num_output: 126
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -5026,7 +5041,7 @@ layer {
     decay_mult: 0.0
   }
   convolution_param {
-    num_output: 546
+    num_output: 126
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -5140,7 +5155,7 @@ layer {
     decay_mult: 0.0
   }
   convolution_param {
-    num_output: 546
+    num_output: 126
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -5244,7 +5259,7 @@ layer {
     shape {
       dim: 0
       dim: -1
-      dim: 91
+      dim: 21
     }
   }
 }
@@ -5274,15 +5289,15 @@ layer {
     phase: TEST
   }
   detection_output_param {
-    num_classes: 91
+    num_classes: 21
     share_location: true
     background_label_id: 0
     nms_param {
-      nms_threshold: 0.6
+      nms_threshold: 0.45
       top_k: 100
     }
     code_type: CENTER_SIZE
     keep_top_k: 100
-    confidence_threshold: 0.3
+    confidence_threshold: 0.25
   }
 }

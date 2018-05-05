@@ -1,0 +1,21 @@
+net: "train.prototxt"
+base_lr: 0.00001
+display: 10
+max_iter: 120000
+lr_policy: "multistep"
+gamma: 0.5
+weight_decay: 0.00001
+snapshot: 1000
+snapshot_prefix: "snapshot/mobilenet"
+solver_mode: GPU
+debug_info: false
+snapshot_after_train: true
+test_initialization: false
+average_loss: 10
+stepvalue: 20000
+stepvalue: 40000
+iter_size: 1
+type: "RMSProp"
+eval_type: "detection"
+ap_version: "11point"
+

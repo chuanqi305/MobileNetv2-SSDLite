@@ -358,12 +358,12 @@ layer {
     phase: TEST
   }
   detection_evaluate_param {
-    num_classes: 21
+    num_classes: %d
     background_label_id: 0
     overlap_threshold: 0.5
     evaluate_difficult_gt: false
   }
-}""" % (self.class_num, self.class_num))
+}""" % (self.class_num, self.class_num, self.class_num))
 
     def ssd_loss(self):
       print(
@@ -834,13 +834,13 @@ if __name__ == '__main__':
   parser.add_argument(
       '-d','--lmdb',
       type=str,
-      default=None,
+      default="trainval_lmdb",
       help='The training database'
   )
   parser.add_argument(
       '-l','--label-map',
       type=str,
-      default=None,
+      default="labelmap_coco.prototxt",
       help='The label map for ssd training.'
   )
   parser.add_argument(
@@ -868,7 +868,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--eps',
       type=float,
-      default=1e-5,
+      default=0.001,
       help='eps parameter of BatchNorm layers, default is 1e-5'
   )
   parser.add_argument(

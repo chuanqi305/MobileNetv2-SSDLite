@@ -33,7 +33,7 @@ def load_net(net, net2):
 from_file = "deploy.prototxt"
 from_model = "deploy.caffemodel"
 
-net_file= 'deploy_voc.prototxt'  
+net_file= 'voc/deploy.prototxt'  
 save_model='deploy_voc.caffemodel'
 
 net = caffe.Net(from_file,from_model,caffe.TEST)  
