@@ -18,13 +18,12 @@ python gen_model.py -s deploy -c 91 >deploy.prototxt
 ### Train your own dataset
 1. Generate the trainval_lmdb and test_lmdb from your dataset.
 2. Write a labelmap.prototxt
-3. Use gen_model.py to generate some prototxt files
+3. Use gen_model.py to generate some prototxt files, replace the "CLASS_NUM" with class number of your own dataset.
 ```
 python gen_model.py -s train -c CLASS_NUM >train.prototxt
 python gen_model.py -s test -c CLASS_NUM >test.prototxt
 python gen_model.py -s deploy -c CLASS_NUM >deploy.prototxt
 ```
-Replace the "CLASS_NUM" with class number of your own dataset.
 4. Copy coco/solver_train.prototxt and coco/train.sh to your project and start training.
 
 ### Note
