@@ -15,6 +15,18 @@ python gen_model.py -s deploy -c 91 >deploy.prototxt
 4. Use the code in src to accelerate your training if you have a cudnn7, or add "engine: CAFFE" to your depthwise convolution layer to solve the memory issue.
 5. The original tensorflow model is trained on MSCOCO dataset, maybe you need deploy.caffemodel for VOC dataset, use coco2voc.py to get deploy_voc.caffemodel.
 
+### Train your own dataset
+1. Generate the trainval_lmdb and test_lmdb from your dataset.
+2. Write a labelmap.prototxt
+3. Use gen_model.py to generate some prototxt files
+```
+python gen_model.py -s train -c CLASS_NUM >train.prototxt
+python gen_model.py -s test -c CLASS_NUM >test.prototxt
+python gen_model.py -s deploy -c CLASS_NUM >deploy.prototxt
+```
+Replace the "CLASS_NUM" with class number of your own dataset.
+4. Copy coco/solver_train.prototxt and coco/train.sh to your project and start training.
+
 ### Note
 There are some differences between caffe and tensorflow implementation:
 1. The padding method 'SAME' in tensorflow sometimes use the [0, 0, 1, 1] paddings, means that top=0, left=0, bottom=1, right=1 padding. In caffe, there is no parameters can be used to do that kind of padding.
