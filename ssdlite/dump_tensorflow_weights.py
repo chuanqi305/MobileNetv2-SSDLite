@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 def graph_create(graphpath):
-    with tf.gfile.FastGFile(graphpath, 'r') as graphfile:
+    with tf.gfile.FastGFile(graphpath, 'rb') as graphfile:
         graphdef = tf.GraphDef()
         graphdef.ParseFromString(graphfile.read())
 
