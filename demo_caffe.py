@@ -1,16 +1,16 @@
 import numpy as np  
 import sys,os  
 import cv2
-caffe_root = '/home/yaochuanqi/work/ssd/caffe/'
+caffe_root = '/home/yaochuanqi/work/tmp/ssd/'
 sys.path.insert(0, caffe_root + 'python')  
 import caffe  
 
 
-net_file= 'coco/deploy.prototxt'
-caffe_model='deploy.caffemodel'  
+net_file= 'ssdlite/coco/deploy.prototxt'
+caffe_model='ssdlite/deploy.caffemodel'  
 test_dir = "images"
 
-caffe.set_mode_gpu()
+caffe.set_mode_cpu()
 net = caffe.Net(net_file,caffe_model,caffe.TEST)  
 
 COCO_CLASSES = ("background" , "person" , "bicycle" , "car" , "motorcycle" , 

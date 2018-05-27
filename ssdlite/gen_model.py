@@ -432,10 +432,10 @@ layer {
   }
 }""" % bottom)
 
-    def conv(self, name, out, kernel, stride=1, group=1, bias=False, bottom=None):
-
-      if self.stage == "deploy" and self.nobn: #for deploy, merge bn to bias, so bias must be true
-          bias = True
+    def conv(self, name, out, kernel, stride=1, group=1, bias=False, bottom=None, ignore_bn='default'):
+      bias = self.nobn
+      if ignore_bn != 'default':
+          bias = ignore_bn
 
       if bottom is None:
           bottom = self.last
@@ -484,8 +484,11 @@ layer {
 }""" % (name, bottom, name, bias_lr_mult, out, biasstr, padstr, kernel, stridestr, groupstr, bias_filler))
       self.last = name
     
-    def bn(self, name):
-      if self.stage == "deploy" and self.nobn:  #deploy does not need bn, you can use merge_bn.py to generate a new caffemodel
+    def bn(self, name, ignore_bn='default'):
+      nobn = self.nobn
+      if ignore_bn != 'default':
+         nobn = ignore_bn
+      if nobn:  #deploy does not need bn, you can use merge_bn.py to generate a new caffemodel
          return
       eps_str = ""
       if self.eps != 1e-5:
@@ -576,10 +579,10 @@ layer {
       else:
          self.conv_project(name + '/project', t * inp, outp)
     
-    def conv_depthwise(self, name, inp, stride):
+    def conv_depthwise(self, name, inp, stride, bottom=None, ignore_bn='default'):
       inp = int(inp * self.size)
-      self.conv(name, inp, 3, stride, inp)
-      self.bn(name)
+      self.conv(name, inp, 3, stride, inp, bottom=bottom, ignore_bn=ignore_bn)
+      self.bn(name, ignore_bn=ignore_bn)
       self.relu(name)
 
     def conv_expand(self, name, inp, outp):
@@ -689,26 +692,28 @@ layer {
   }
 }""" % (name, name, name, float(min_box), max_box_str, aspect_ratio_str))
 
-    def mbox_conf(self, bottom, num):
+    def mbox_conf(self, bottom, inp, num):
        name = bottom + "_mbox_conf"
-       self.conv(name, num, 3, bias=True, bottom=bottom)
+       self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom, ignore_bn=False)
+       self.conv(name, num, 1, bias=True)
        self.permute(name)
        self.flatten(name)
-    def mbox_loc(self, bottom, num):
+    def mbox_loc(self, bottom, inp, num):
        name = bottom + "_mbox_loc"
-       self.conv(name, num, 3, bias=True, bottom=bottom)
+       self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom, ignore_bn=False)
+       self.conv(name, num, 1, bias=True)
        self.permute(name)
        self.flatten(name)
 
-    def mbox(self, bottom, num):
-       self.mbox_loc(bottom, num * 4)
-       self.mbox_conf(bottom, num * self.class_num)
+    def mbox(self, bottom, inp, num):
+       self.mbox_loc(bottom, inp, num * 4)
+       self.mbox_conf(bottom, inp, num * self.class_num)
        min_size, max_size = self.anchors[0]
        if self.first_prior:
            self.mbox_prior(bottom, min_size, None, [2.0])
            self.first_prior = False
        else:
-           self.mbox_prior(bottom, min_size, max_size,[2.0,3.0])
+           self.mbox_prior(bottom, min_size, max_size, [2.0,3.0])
        self.anchors.pop(0)
 
     def fc(self, name, output):
@@ -800,12 +805,12 @@ layer {
           self.conv_ssd("layer_19", 3, 512, 256)
           self.conv_ssd("layer_19", 4, 256, 256)
           self.conv_ssd("layer_19", 5, 256, 128)
-          self.mbox("conv_13/expand", 3)
-          self.mbox("Conv_1", 6)
-          self.mbox("layer_19_2_2", 6)
-          self.mbox("layer_19_2_3", 6)
-          self.mbox("layer_19_2_4", 6)
-          self.mbox("layer_19_2_5", 6)
+          self.mbox("conv_13/expand", 576, 3)
+          self.mbox("Conv_1", 1280, 6)
+          self.mbox("layer_19_2_2", 512, 6)
+          self.mbox("layer_19_2_3", 256, 6)
+          self.mbox("layer_19_2_4", 256, 6)
+          self.mbox("layer_19_2_5", 128, 6)
           self.concat_boxes(['conv_13/expand', 'Conv_1', 'layer_19_2_2', 'layer_19_2_3', 'layer_19_2_4', 'layer_19_2_5'])
           if stage == "train":
              self.ssd_loss()
@@ -833,7 +838,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '-s','--stage',
       type=str,
-      default='train',
+      default='deploy',
       help='The stage of prototxt, train|test|deploy.'
   )
   parser.add_argument(
@@ -866,9 +871,9 @@ if __name__ == '__main__':
       help='Output class number, include the \'backgroud\' class. e.g. 21 for voc.'
   )
   parser.add_argument(
-      '--no_batchnorm',
+      '--batchnorm',
       action='store_true',
-      help='for deploy, generate a deploy.prototxt without batchnorm and scale'
+      help='Feature extract layers use batchnorm and scale'
   )
   parser.add_argument(
       '--eps',
@@ -883,4 +888,4 @@ if __name__ == '__main__':
   )
   FLAGS, unparsed = parser.parse_known_args()
   gen = Generator()
-  gen.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num, FLAGS.no_batchnorm, FLAGS.eps, FLAGS.relu6)
+  gen.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num, not FLAGS.batchnorm, FLAGS.eps, FLAGS.relu6)

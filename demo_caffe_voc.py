@@ -1,12 +1,12 @@
 import numpy as np  
 import sys,os  
 import cv2
-caffe_root = '/home/yaochuanqi/work/ssd/caffe/'
+caffe_root = '/home/yaochuanqi/work/tmp/ssd/'
 sys.path.insert(0, caffe_root + 'python')  
 import caffe  
 
-net_file= 'voc/deploy.prototxt'  
-caffe_model='deploy_voc.caffemodel'  
+net_file= 'ssdlite/voc/deploy.prototxt'  
+caffe_model='ssdlite/deploy_voc.caffemodel'  
 test_dir = "images"
 
 caffe.set_mode_gpu()
