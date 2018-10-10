@@ -51,9 +51,9 @@ with tf.Session() as sess:
              origin_shape = caffe_weights.shape
              boxes = 0
              if output_name.find('BoxEncodingPredictor') != -1:
-                 boxes = caffe_weights.shape[0] / 4
+                 boxes = caffe_weights.shape[0] // 4
              elif output_name.find('ClassPredictor') != -1:
-                 boxes = caffe_weights.shape[0] / 91
+                 boxes = caffe_weights.shape[0] // 91
 
              if output_name.find('BoxEncodingPredictor') != -1:
                  tmp = caffe_weights.reshape(boxes, 4, -1).copy()
@@ -92,9 +92,9 @@ with tf.Session() as sess:
              caffe_bias = data
              boxes = 0
              if output_name.find('BoxEncodingPredictor') != -1:
-                 boxes = caffe_bias.shape[0] / 4
+                 boxes = caffe_bias.shape[0] // 4
              elif output_name.find('ClassPredictor') != -1:
-                 boxes = caffe_bias.shape[0] / 91
+                 boxes = caffe_bias.shape[0] // 91
              if output_name.find('BoxEncodingPredictor') != -1:
                  tmp = caffe_bias.reshape(boxes, 4).copy()
                  new_bias = np.zeros(tmp.shape, dtype=np.float32)
