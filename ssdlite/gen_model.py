@@ -1,557 +1,436 @@
+import os
+import sys
 import argparse
-FLAGS = None
+import logging
+import math
 
-class Generator():
+try:
+    caffe_root = '/home/yaochuanqi/work/ssd/caffe/build2/install/'
+    sys.path.insert(0, caffe_root + 'python')
+    import caffe
+    from caffe.proto import caffe_pb2
+except ImportError:
+    logging.fatal("Cannot find caffe!")
+from google.protobuf import text_format
 
-    def __init__(self):
-      self.first_prior = True
-      self.anchors = create_ssd_anchors()
-      self.last = "data"
+class CaffeNetGenerator:
+    def __init__(self, net):
+        self.net = net
+        self.top = "data"
+        self.eps = 0.001
+        self.first_prior = True
+        self.anchors = create_ssd_anchors()
+        self.shape = {}
 
     def header(self, name):
-      print("name: \"%s\"" % name)
-    
+        self.net.name = name
+
     def data_deploy(self):
-      print(
-"""input: "data"
-input_shape {
-  dim: 1
-  dim: 3
-  dim: %d
-  dim: %d
-}""" % (self.input_size, self.input_size))
-    
+        self.net.input.append("data")
+        shape = self.net.input_shape.add()
+        shape.dim.append(1) 
+        shape.dim.append(3) 
+        shape.dim.append(self.input_size) 
+        shape.dim.append(self.input_size) 
+
     def data_train_classifier(self):
-      print(
-"""layer {
-    name: "data"
-    type: "Data"
-    top: "data"
-    top: "label"
-    data_param{
-        source: "%s"
-        backend: LMDB
-        batch_size: 64
-    }
-    transform_param {
-        crop_size: %s
-	mean_file: "imagenet.mean"
-        mirror: true
-    }
-    include: { phase: TRAIN }
-}
-}""") 
+        layer = self.net.layer.add()
+        layer.name = "data"
+        layer.type = "Data"
+        layer.top.append("data")
+        layer.top.append("label")
+        layer.data_param.source = self.lmdb
+        layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+        layer.data_param.batch_size = 64
+        layer.transform_param.crop_size = self.input_size
+        layer.transform_param.mean_file = "imagenet.mean"
+        layer.transform_param.mirror = True
+        layer.include.add().phase = caffe_pb2.TRAIN
 
     def data_train_ssd(self):
-      print(
-"""layer {
-  name: "data"
-  type: "AnnotatedData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  transform_param {
-    scale: 0.007843
-    mirror: true
-    mean_value: 127.5
-    mean_value: 127.5
-    mean_value: 127.5
-    resize_param {
-      prob: 1.0
-      resize_mode: WARP
-      height: %d
-      width: %d
-      interp_mode: LINEAR
-      interp_mode: AREA
-      interp_mode: NEAREST
-      interp_mode: CUBIC
-      interp_mode: LANCZOS4
-    }
-    emit_constraint {
-      emit_type: CENTER
-    }
-    distort_param {
-      brightness_prob: 0.5
-      brightness_delta: 32.0
-      contrast_prob: 0.5
-      contrast_lower: 0.5
-      contrast_upper: 1.5
-      hue_prob: 0.5
-      hue_delta: 18.0
-      saturation_prob: 0.5
-      saturation_lower: 0.5
-      saturation_upper: 1.5
-      random_order_prob: 0.0
-    }
-    expand_param {
-      prob: 0.5
-      max_expand_ratio: 4.0
-    }
-  }
-  data_param {
-    source: "%s"
-    batch_size: 24
-    backend: LMDB
-  }
-  annotated_data_param {
-    batch_sampler {
-      max_sample: 1
-      max_trials: 1
-    }
-    batch_sampler {
-      sampler {
-        min_scale: 0.3
-        max_scale: 1.0
-        min_aspect_ratio: 0.5
-        max_aspect_ratio: 2.0
-      }
-      sample_constraint {
-        min_jaccard_overlap: 0.1
-      }
-      max_sample: 1
-      max_trials: 50
-    }
-    batch_sampler {
-      sampler {
-        min_scale: 0.3
-        max_scale: 1.0
-        min_aspect_ratio: 0.5
-        max_aspect_ratio: 2.0
-      }
-      sample_constraint {
-        min_jaccard_overlap: 0.3
-      }
-      max_sample: 1
-      max_trials: 50
-    }
-    batch_sampler {
-      sampler {
-        min_scale: 0.3
-        max_scale: 1.0
-        min_aspect_ratio: 0.5
-        max_aspect_ratio: 2.0
-      }
-      sample_constraint {
-        min_jaccard_overlap: 0.5
-      }
-      max_sample: 1
-      max_trials: 50
-    }
-    batch_sampler {
-      sampler {
-        min_scale: 0.3
-        max_scale: 1.0
-        min_aspect_ratio: 0.5
-        max_aspect_ratio: 2.0
-      }
-      sample_constraint {
-        min_jaccard_overlap: 0.7
-      }
-      max_sample: 1
-      max_trials: 50
-    }
-    batch_sampler {
-      sampler {
-        min_scale: 0.3
-        max_scale: 1.0
-        min_aspect_ratio: 0.5
-        max_aspect_ratio: 2.0
-      }
-      sample_constraint {
-        min_jaccard_overlap: 0.9
-      }
-      max_sample: 1
-      max_trials: 50
-    }
-    batch_sampler {
-      sampler {
-        min_scale: 0.3
-        max_scale: 1.0
-        min_aspect_ratio: 0.5
-        max_aspect_ratio: 2.0
-      }
-      sample_constraint {
-        max_jaccard_overlap: 1.0
-      }
-      max_sample: 1
-      max_trials: 50
-    }
-    label_map_file: "%s"
-  }
-}"""  % (self.input_size, self.input_size, self.lmdb,  self.label_map))
+        layer = self.net.layer.add()
+        layer.name = "data"
+        layer.type = "AnnotatedData"
+        layer.top.append("data")
+        layer.top.append("label")
+        layer.include.add().phase = caffe_pb2.TRAIN
+
+        layer.transform_param.scale = 0.007843
+        layer.transform_param.mirror = True
+        layer.transform_param.mean_value.append(127.5)
+        layer.transform_param.mean_value.append(127.5)
+        layer.transform_param.mean_value.append(127.5)
+        layer.transform_param.resize_param.prob = 1.0
+        layer.transform_param.resize_param.resize_mode = caffe_pb2.ResizeParameter.WARP
+        layer.transform_param.resize_param.height = self.input_size
+        layer.transform_param.resize_param.width = self.input_size
+        layer.transform_param.resize_param.interp_mode.append(caffe_pb2.ResizeParameter.LINEAR)
+        layer.transform_param.resize_param.interp_mode.append(caffe_pb2.ResizeParameter.AREA)
+        layer.transform_param.resize_param.interp_mode.append(caffe_pb2.ResizeParameter.NEAREST)
+        layer.transform_param.resize_param.interp_mode.append(caffe_pb2.ResizeParameter.CUBIC)
+        layer.transform_param.resize_param.interp_mode.append(caffe_pb2.ResizeParameter.LANCZOS4)
+        layer.transform_param.emit_constraint.emit_type = caffe_pb2.EmitConstraint.CENTER
+        layer.transform_param.distort_param.brightness_prob = 0.5
+        layer.transform_param.distort_param.brightness_delta = 32.0
+        layer.transform_param.distort_param.contrast_lower = 0.5
+        layer.transform_param.distort_param.contrast_upper = 1.5
+        layer.transform_param.distort_param.hue_prob = 0.5
+        layer.transform_param.distort_param.hue_delta = 18.0
+        layer.transform_param.distort_param.saturation_prob = 0.5
+        layer.transform_param.distort_param.saturation_lower = 0.5
+        layer.transform_param.distort_param.saturation_upper = 1.5
+        layer.transform_param.distort_param.random_order_prob = 0.0
+        layer.transform_param.expand_param.prob = 0.5
+        layer.transform_param.expand_param.max_expand_ratio = 4.0
+
+
+        layer.data_param.source = self.lmdb
+        layer.data_param.batch_size = 64
+        layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+
+        sampler = layer.annotated_data_param.batch_sampler.add()
+        sampler.max_sample = 1
+        sampler.max_trials = 1
+        for overlap in [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]:
+            sampler = layer.annotated_data_param.batch_sampler.add()
+            sampler.sampler.min_scale = 0.3
+            sampler.sampler.max_scale = 1.0
+            sampler.sampler.min_aspect_ratio = 0.5
+            sampler.sampler.max_aspect_ratio = 2.0
+            sampler.sample_constraint.min_jaccard_overlap = overlap
+            sampler.max_sample = 1
+            sampler.max_trials = 50
+        layer.annotated_data_param.label_map_file = self.label_map
 
     def data_test_ssd(self):
-      print(
-"""layer {
-  name: "data"
-  type: "AnnotatedData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  transform_param {
-    scale: 0.007843
-    mean_value: 127.5
-    mean_value: 127.5
-    mean_value: 127.5
-    resize_param {
-      prob: 1.0
-      resize_mode: WARP
-      height: %d
-      width: %d
-      interp_mode: LINEAR
-    }
-  }
-  data_param {
-    source: "%s"
-    batch_size: 8
-    backend: LMDB
-  }
-  annotated_data_param {
-    batch_sampler {
-    }
-    label_map_file: "%s"
-  }
-}""" %  (self.input_size, self.input_size, self.lmdb,  self.label_map))
+        layer = self.net.layer.add()
+        layer.name = "data"
+        layer.type = "AnnotatedData"
+        layer.top.append("data")
+        layer.top.append("label")
+        layer.include.add().phase = caffe_pb2.TEST
+        layer.transform_param.scale = 0.007843
+        layer.transform_param.mirror = True
+        layer.transform_param.mean_value.append(127.5)
+        layer.transform_param.mean_value.append(127.5)
+        layer.transform_param.mean_value.append(127.5)
+        layer.transform_param.resize_param.prob = 1.0
+        layer.transform_param.resize_param.resize_mode = caffe_pb2.ResizeParameter.WARP
+        layer.transform_param.resize_param.height = self.input_size
+        layer.transform_param.resize_param.width = self.input_size
+        layer.transform_param.resize_param.interp_mode.append(caffe_pb2.ResizeParameter.LINEAR)
 
+        layer.data_param.source = ""
+        layer.data_param.batch_size = 8
+        layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+        layer.annotated_data_param.label_map_file = self.label_map
 
     def classifier_loss(self):
-      print(
-"""layer {
-  name: "softmax"
-  type: "Softmax"
-  bottom: "%s"
-  top: "prob"
-}
-layer {
-  name: "accuracy"
-  type: "Accuracy"
-  bottom: "prob"
-  bottom: "label"
-  top: "accuracy"
-}
-layer{
-  name: "loss"
-  type: "SoftmaxWithLoss"
-  bottom: "%s"
-  bottom: "label"
-  loss_weight: 1 
-}""" % (self.last, self.last))
+        layer = self.net.layer.add()
+        layer.name = "softmax"
+        layer.type = "Softmax"
+        layer.bottom.append(self.top)
+        layer.top.append("prob")
+
+        layer = self.net.layer.add()
+        layer.name = "accuracy"
+        layer.type = "Accuracy"
+        layer.bottom.append("prob")
+        layer.bottom.append("label")
+        layer.top.append("accuracy")
+
+        layer = self.net.layer.add()
+        layer.name = "loss"
+        layer.type = "SoftmaxWithLoss"
+        layer.bottom.append(self.top)
+        layer.bottom.append("label")
+        layer.loss_weight.append(1)
 
     def ssd_predict(self):
-      print(
-"""layer {
-  name: "mbox_conf_reshape"
-  type: "Reshape"
-  bottom: "mbox_conf"
-  top: "mbox_conf_reshape"
-  reshape_param {
-    shape {
-      dim: 0
-      dim: -1
-      dim: %d
-    }
-  }
-}
-layer {
-  name: "mbox_conf_sigmoid"
-  type: "Sigmoid"
-  bottom: "mbox_conf_reshape"
-  top: "mbox_conf_sigmoid"
-}
-layer {
-  name: "mbox_conf_flatten"
-  type: "Flatten"
-  bottom: "mbox_conf_sigmoid"
-  top: "mbox_conf_flatten"
-  flatten_param {
-    axis: 1
-  }
-}
-layer {
-  name: "detection_out"
-  type: "DetectionOutput"
-  bottom: "mbox_loc"
-  bottom: "mbox_conf_flatten"
-  bottom: "mbox_priorbox"
-  top: "detection_out"
-  include {
-    phase: TEST
-  }
-  detection_output_param {
-    num_classes: %d
-    share_location: true
-    background_label_id: 0
-    nms_param {
-      nms_threshold: 0.45
-      top_k: 100
-    }
-    code_type: CENTER_SIZE
-    keep_top_k: 100
-    confidence_threshold: 0.35
-  }
-}""" % (self.class_num, self.class_num))
+        layer = self.net.layer.add()
+        layer.name = "mbox_conf_reshape"
+        layer.type = "Reshape"
+        layer.bottom.append("mbox_conf")
+        layer.top.append("mbox_conf_reshape")
+        layer.reshape_param.shape.dim.append(0)
+        layer.reshape_param.shape.dim.append(-1)
+        layer.reshape_param.shape.dim.append(self.class_num)
+
+        layer = self.net.layer.add()
+        layer.name = "mbox_conf_sigmoid"
+        layer.type = "Sigmoid"
+        layer.bottom.append("mbox_conf_reshape")
+        layer.top.append("mbox_conf_sigmoid")
+        layer = self.net.layer.add()
+        layer.name = "mbox_conf_flatten"
+        layer.type = "Flatten"
+        layer.bottom.append("mbox_conf_sigmoid")
+        layer.top.append("mbox_conf_flatten")
+        layer.flatten_param.axis = 1
+
+        layer = self.net.layer.add()
+        layer.name = "detection_out"
+        layer.type = "DetectionOutput"
+        layer.bottom.append("mbox_loc")
+        layer.bottom.append("mbox_conf_flatten")
+        layer.bottom.append("mbox_priorbox")
+        layer.top.append("detection_out")
+        layer.include.add().phase = caffe_pb2.TEST
+
+        layer.detection_output_param.num_classes = self.class_num
+        layer.detection_output_param.share_location = True
+        layer.detection_output_param.background_label_id = 0
+        layer.detection_output_param.nms_param.nms_threshold = 0.45
+        layer.detection_output_param.nms_param.top_k = 100
+        layer.detection_output_param.code_type = caffe_pb2.PriorBoxParameter.CENTER_SIZE
+        layer.detection_output_param.keep_top_k = 100
+        layer.detection_output_param.confidence_threshold = 0.35
 
     def ssd_test(self):
-      print(
-"""layer {
-  name: "mbox_conf_reshape"
-  type: "Reshape"
-  bottom: "mbox_conf"
-  top: "mbox_conf_reshape"
-  reshape_param {
-    shape {
-      dim: 0
-      dim: -1
-      dim: %d
-    }
-  }
-}
-layer {
-  name: "mbox_conf_sigmoid"
-  type: "Sigmoid"
-  bottom: "mbox_conf_reshape"
-  top: "mbox_conf_sigmoid"
-}
-layer {
-  name: "mbox_conf_flatten"
-  type: "Flatten"
-  bottom: "mbox_conf_sigmoid"
-  top: "mbox_conf_flatten"
-  flatten_param {
-    axis: 1
-  }
-}
-layer {
-  name: "detection_out"
-  type: "DetectionOutput"
-  bottom: "mbox_loc"
-  bottom: "mbox_conf_flatten"
-  bottom: "mbox_priorbox"
-  top: "detection_out"
-  include {
-    phase: TEST
-  }
-  detection_output_param {
-    num_classes: %d
-    share_location: true
-    background_label_id: 0
-    nms_param {
-      nms_threshold: 0.45
-      top_k: 400
-    }
-    code_type: CENTER_SIZE
-    keep_top_k: 200
-    confidence_threshold: 0.01
-  }
-}
-layer {
-  name: "detection_eval"
-  type: "DetectionEvaluate"
-  bottom: "detection_out"
-  bottom: "label"
-  top: "detection_eval"
-  include {
-    phase: TEST
-  }
-  detection_evaluate_param {
-    num_classes: %d
-    background_label_id: 0
-    overlap_threshold: 0.5
-    evaluate_difficult_gt: false
-  }
-}""" % (self.class_num, self.class_num, self.class_num))
+        self.ssd_predict()
+        layer = self.net.layer.add() 
+        layer.name = "detection_eval"
+        layer.type = "DetectionEvaluate"
+        layer.bottom.append("detection_out")
+        layer.bottom.append("label")
+        layer.top.append("detection_eval")
+        layer.include.add().phase = caffe_pb2.TEST
+        layer.detection_evaluate_param.num_classes = self.class_num
+        layer.detection_evaluate_param.background_label_id = 0
+        layer.detection_evaluate_param.overlap_threshold = 0.5
+        layer.detection_evaluate_param.evaluate_difficult_gt = False
 
     def ssd_loss(self):
-      print(
-"""layer {
-  name: "mbox_loss"
-  type: "MultiBoxLoss"
-  bottom: "mbox_loc"
-  bottom: "mbox_conf"
-  bottom: "mbox_priorbox"
-  bottom: "label"
-  top: "mbox_loss"
-  include {
-    phase: TRAIN
-  }
-  propagate_down: true
-  propagate_down: true
-  propagate_down: false
-  propagate_down: false
-  loss_param {
-    normalization: VALID
-  }
-  multibox_loss_param {
-    loc_loss_type: SMOOTH_L1
-    conf_loss_type: LOGISTIC
-    loc_weight: 1.0
-    num_classes: %d
-    share_location: true
-    match_type: PER_PREDICTION
-    overlap_threshold: 0.5
-    use_prior_for_matching: true
-    background_label_id: 0
-    use_difficult_gt: true
-    neg_pos_ratio: 3.0
-    neg_overlap: 0.5
-    code_type: CENTER_SIZE
-    ignore_cross_boundary_bbox: false
-    mining_type: MAX_NEGATIVE
-  }
-}""" % self.class_num)
+        layer = self.net.layer.add() 
+        layer.name = "mbox_loss"
+        layer.type = "MultiBoxLoss"
+        layer.bottom.append("mbox_loc")
+        layer.bottom.append("mbox_conf")
+        layer.bottom.append("mbox_priorbox")
+        layer.bottom.append("label")
+        layer.top.append("mbox_loss")
+        layer.include.add().phase = caffe_pb2.TRAIN
+        layer.propagate_down.append(True)
+        layer.propagate_down.append(True)
+        layer.propagate_down.append(False)
+        layer.propagate_down.append(False)
+        layer.loss_param.normalization = caffe_pb2.LossParameter.VALID
+        layer.multibox_loss_param.loc_loss_type = caffe_pb2.MultiBoxLossParameter.SMOOTH_L1
+        layer.multibox_loss_param.conf_loss_type = caffe_pb2.MultiBoxLossParameter.LOGISTIC
+        layer.multibox_loss_param.loc_weight = 1.0
+        layer.multibox_loss_param.num_classes = self.class_num
+        layer.multibox_loss_param.share_location = True
+        layer.multibox_loss_param.match_type = caffe_pb2.MultiBoxLossParameter.PER_PREDICTION
+        layer.multibox_loss_param.overlap_threshold = 0.5
+        layer.multibox_loss_param.use_difficult_gt = True
+        layer.multibox_loss_param.neg_pos_ratio = 3.0
+        layer.multibox_loss_param.neg_overlap = 0.5
+        layer.multibox_loss_param.code_type = caffe_pb2.PriorBoxParameter.CENTER_SIZE
+        layer.multibox_loss_param.ignore_cross_boundary_bbox = False
+        layer.multibox_loss_param.mining_type = caffe_pb2.MultiBoxLossParameter.MAX_NEGATIVE
 
     def concat_boxes(self, convs):
-      for layer in ["loc", "conf"]:
-        bottom =""
-        for cnv in convs:
-          bottom += "\n  bottom: \"%s_mbox_%s_flat\"" % (cnv, layer)
-        print(
-"""layer {
-  name: "mbox_%s"
-  type: "Concat"%s
-  top: "mbox_%s"
-  concat_param {
-    axis: 1
-  }
-}""" % (layer, bottom, layer))
+        for lc in ["loc", "conf"]:
+            layer = self.net.layer.add()
+            layer.name = "mbox_" + lc
+            layer.type = "Concat"
+            for conv in convs:
+                layer.bottom.append(conv + "_mbox_" + lc + "_flat")
+            layer.top.append("mbox_" + lc)
+            layer.concat_param.axis = 1
+        layer = self.net.layer.add()
+        layer.name = "mbox_priorbox"
+        layer.type = "Concat"
+        for conv in convs:
+            layer.bottom.append(conv + "_mbox_priorbox")
+        layer.top.append("mbox_priorbox")
+        layer.concat_param.axis = 2
 
-      bottom =""
-      for cnv in convs:
-        bottom += "\n  bottom: \"%s_mbox_priorbox\"" % cnv
-      print(
-"""layer {
-  name: "mbox_priorbox"
-  type: "Concat"%s
-  top: "mbox_priorbox"
-  concat_param {
-    axis: 2
-  }
-}""" % bottom)
-
-    def conv(self, name, out, kernel, stride=1, group=1, bias=False, bottom=None, ignore_bn='default'):
-      bias = self.nobn
-      if ignore_bn != 'default':
-          bias = ignore_bn
-
-      if bottom is None:
-          bottom = self.last
-      padstr = ""
-      if kernel > 1:
-          padstr = "\n    pad: %d" % (kernel / 2)
-      groupstr = ""
-      if group > 1:
-          groupstr = "\n    group: %d\n    #engine: CAFFE" % group
-      stridestr = ""
-      if stride > 1:
-          stridestr = "\n    stride: %d" % stride 
-      bias_lr_mult = ""
-      bias_filler = ""
-      if bias == True:
-          bias_filler = """
-    bias_filler {
-      type: "constant"
-      value: 0.0
-    }"""
-          bias_lr_mult = """
-  param {
-    lr_mult: 2.0
-    decay_mult: 0.0
-  }"""
-      biasstr = ""
-      if bias == False:
-          biasstr = "\n    bias_term: false"
-      print(
-"""layer {
-  name: "%s"
-  type: "Convolution"
-  bottom: "%s"
-  top: "%s"
-  param {
-    lr_mult: 1.0
-    decay_mult: 1.0
-  }%s
-  convolution_param {
-    num_output: %d%s%s
-    kernel_size: %d%s%s
-    weight_filler {
-      type: "msra"
-    }%s
-  }
-}""" % (name, bottom, name, bias_lr_mult, out, biasstr, padstr, kernel, stridestr, groupstr, bias_filler))
-      self.last = name
+    def adjust_pad(self):
+       '''
+       simulate tensorflow padding with caffe slice layer
+       '''
+       name = self.net.layer[-1].top[0]
+       self.net.layer[-1].top[0] = name + "/pad"
+       self.net.layer[-1].convolution_param.pad[0] += 1
+       layer = self.net.layer.add()
+       layer.name = "slice"
+       layer.type = "Slice"
+       layer.bottom.append(name + "/pad")
+       layer.top.append(name + "/margin1")
+       layer.top.append(name + "/tmp")
+       layer.slice_param.axis = 2
+       layer.slice_param.slice_point.append(1)
+       layer = self.net.layer.add()
+       layer.name = "slice"
+       layer.type = "Slice"
+       layer.bottom.append(name + "/tmp")
+       layer.top.append(name + "/margin2")
+       layer.top.append(name)
+       layer.slice_param.axis = 3
+       layer.slice_param.slice_point.append(1)
     
-    def bn(self, name, ignore_bn='default'):
-      nobn = self.nobn
-      if ignore_bn != 'default':
-         nobn = ignore_bn
-      if nobn:  #deploy does not need bn, you can use merge_bn.py to generate a new caffemodel
-         return
-      eps_str = ""
-      if self.eps != 1e-5:
-          eps_str = "\n  batch_norm_param {\n    eps: 0.001\n  }"
-      print(
-"""layer {
-  name: "%s/bn"
-  type: "BatchNorm"
-  bottom: "%s"
-  top: "%s"%s
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-}
-layer {
-  name: "%s/scale"
-  type: "Scale"
-  bottom: "%s"
-  top: "%s"
-  param {
-    lr_mult: 1.0
-    decay_mult: 0.0
-  }
-  param {
-    lr_mult: 2.0
-    decay_mult: 0.0
-  }
-  scale_param {
-    filler {
-      value: 1
-    }
-    bias_term: true
-    bias_filler {
-      value: 0
-    }
-  }
-}""" % (name,name,name,eps_str,name,name,name))
-      self.last = name
-    
+    def conv(self, name, output, kernel, stride=1, group=1, bias=False, bottom=None):
+        layer = self.net.layer.add()
+        layer.name = name
+        if bottom is None:
+            bottom = self.top
+        layer.bottom.append(bottom)
+        layer.type = "Convolution"
+        layer.top.append(name)
+        layer.convolution_param.num_output = output
+        lr_decay_mult = [[1.0, 1.0], [2,0, 0.0]]
+        #print name + "->" + str(bias)
+        if self.nobn:
+            bias = True
+        if not bias:
+            layer.convolution_param.bias_term = bias
+            lr_decay_mult = [[1.0, 1.0]]
+        for mul in lr_decay_mult:
+            param = layer.param.add()
+            param.lr_mult = mul[0]
+            param.decay_mult = mul[1]
+        if group > 1:
+            layer.convolution_param.group = group
+        if kernel > 1:
+            layer.convolution_param.pad.append(kernel / 2)
+        if stride > 1:
+            layer.convolution_param.stride.append(stride)
+        layer.convolution_param.kernel_size.append(kernel)
+        layer.convolution_param.weight_filler.type = "msra"
+        if bias:
+            layer.convolution_param.bias_filler.type = "constant"
+            layer.convolution_param.bias_filler.value = 0
+        #print "adjust ", name, ",bottom=", bottom
+        pad, output_size = compute_pad(self.shape[bottom], stride)
+        #print "pad=", pad, ",output=", output_size
+        self.top = name
+        self.shape[name] = output_size
+        if self.tfpad:
+            if pad[0] != pad[2] or pad[1] != pad[3]:
+                self.adjust_pad()
+
+    def bn(self, name): 
+        if self.nobn:
+            return
+        layer = self.net.layer.add()
+        layer.name = "%s/bn" % name
+        layer.type = "BatchNorm"
+        layer.bottom.append(name)
+        layer.top.append(name)
+        for i in range(3):
+            param = layer.param.add()
+            param.lr_mult = 0
+            param.decay_mult = 0
+        if self.eps != 1e-5:
+            layer.batch_norm_param.eps = self.eps
+        layer = self.net.layer.add()
+        layer.name = "%s/scale" % name
+        layer.type = "Scale"
+        layer.bottom.append(name)
+        layer.top.append(name)
+        for mul in [[1.0, 0.0], [2.0, 0.0]]:
+            param = layer.param.add()
+            param.lr_mult = mul[0]
+            param.decay_mult = mul[1]
+        layer.scale_param.filler.value = 1
+        layer.scale_param.bias_term = True
+        layer.scale_param.bias_filler.value = 0
+
     def relu(self, name):
-      relu_str = "ReLU"
-      if self.relu6:
-         relu_str = "ReLU6"
-      print(
-"""layer {
-  name: "%s/relu"
-  type: "%s"
-  bottom: "%s"
-  top: "%s"
-}""" % (name, relu_str, name, name))
-      self.last
-      self.last = name
-    
-    
+        layer = self.net.layer.add()
+        layer.name = "%s/relu" % name
+        if self.relu6:
+            layer.type = "ReLU6"
+        else:
+            layer.type = "ReLU"
+        layer.bottom.append(name)
+        layer.top.append(name)
+
+    def shortcut(self, bottom, top):
+        layer = self.net.layer.add()
+        layer.name = top + "/sum"
+        layer.type = "Eltwise"
+        layer.bottom.append(bottom)
+        layer.bottom.append(self.top)
+        layer.top.append(top)
+        self.top = top
+        self.shape[top] = self.shape[bottom]
+
+    def ave_pool(self, name):
+        layer = self.net.layer.add()
+        layer.name = name
+        layer.type = "Pooling"
+        layer.bottom.append(self.top)
+        layer.top.append(name)
+        layer.pooling_param.pool = caffe_pb2.PoolingParameter.AVE 
+        layer.pooling_param.global_pooling = True
+        self.top = name
+
+    def permute(self, name):
+        layer = self.net.layer.add()
+        layer.name = "%s_perm" % name
+        layer.type = "Permute"
+        layer.bottom.append(name)
+        layer.top.append("%s_perm" % name)
+        for i in [0, 2, 3, 1]:
+            layer.permute_param.order.append(i)
+        self.top = name + "_perm"
+
+    def flatten(self, name):
+        layer = self.net.layer.add()
+        layer.name = "%s_flat" % name
+        layer.type = "Flatten"
+        layer.bottom.append(name + "_perm")
+        layer.top.append("%s_flat" % name)
+        layer.flatten_param.axis = 1
+        self.top = name + "_flat"
+
+    def mbox_prior(self, name, min_size, max_size, aspect_ratio):
+        min_box = self.input_size * min_size
+        layer = self.net.layer.add()
+        layer.name = "%s_mbox_priorbox" % name
+        layer.type = "PriorBox"
+        layer.bottom.append(name)
+        layer.bottom.append("data")
+        layer.top.append("%s_mbox_priorbox" % name)
+        layer.prior_box_param.min_size.append(float(min_box))
+        if max_size is not None:
+            max_box = self.input_size * max_size
+            layer.prior_box_param.max_size.append(max_box)
+        for ar in aspect_ratio:
+            layer.prior_box_param.aspect_ratio.append(ar)
+
+        layer.prior_box_param.flip = True
+        layer.prior_box_param.clip = False
+        for i in [0.1, 0.1, 0.2, 0.2]:
+            layer.prior_box_param.variance.append(i)
+        layer.prior_box_param.offset = 0.5
+
+    def fc(self, name, output): 
+        layer = self.net.layer.add()
+        layer.name = name
+        layer.type = "InnerProduct"
+        layer.bottom.append(self.top)
+        layer.top.append(name)
+        for i in [[1, 1], [2, 0]]:
+            param = layer.param.add()
+            param.lr_mult = i[0]
+            param.decay_mult = i[1]
+        layer.inner_product_param.num_output = output
+        layer.weight_filler.type = "msra"
+        layer.bias_filler.type = "constant"
+        layer.bias_filler.value = 0
+ 
+    def reshape(self, name, output):    
+        layer = self.net.layer.add()
+        layer.name = name
+        layer.type = "Reshape"
+        layer.bottom.append(self.top)
+        layer.top.append(name)
+        for i in [-1, output, 1, 1]:
+            layer.reshape_param.shape.dim.append(i)
+
     def conv_bn_relu(self, name, num, kernel, stride):
       self.conv(name, num, kernel, stride)
       self.bn(name)
@@ -570,7 +449,7 @@ layer {
       self.conv_expand(name + '_2_' + stage, outp / 2, outp)
 
     def conv_block(self, name, inp, t, outp, stride, sc):
-      last_block = self.last
+      last_block = self.top
       self.conv_expand(name + '/expand', inp, t * inp)
       self.conv_depthwise(name + '/depthwise', t * inp, stride)
       if sc:
@@ -579,10 +458,10 @@ layer {
       else:
          self.conv_project(name + '/project', t * inp, outp)
     
-    def conv_depthwise(self, name, inp, stride, bottom=None, ignore_bn='default'):
+    def conv_depthwise(self, name, inp, stride, bottom=None):
       inp = int(inp * self.size)
-      self.conv(name, inp, 3, stride, inp, bottom=bottom, ignore_bn=ignore_bn)
-      self.bn(name, ignore_bn=ignore_bn)
+      self.conv(name, inp, 3, stride, inp, bottom=bottom)
+      self.bn(name)
       self.relu(name)
 
     def conv_expand(self, name, inp, outp):
@@ -609,98 +488,17 @@ layer {
       self.conv(name2, outp, 1)
       self.bn(name2)
       self.relu(name2)
-    
-    def shortcut(self, bottom, top):
-      print(
-"""layer {
-  name: "%s/sum"
-  type: "Eltwise"
-  bottom: "%s"
-  bottom: "%s"
-  top: "%s"
-}""" % (top, bottom, self.last, top))
-      self.last = top
-    def ave_pool(self, name):
-      print(
-"""layer {
-  name: "%s"
-  type: "Pooling"
-  bottom: "%s"
-  top: "%s"
-  pooling_param {
-    pool: AVE
-    global_pooling: true
-  }
-}""" % (name, self.last, name))
-      self.last = name
-    
-    def permute(self, name):
-      print(
-"""layer {
-  name: "%s_perm"
-  type: "Permute"
-  bottom: "%s"
-  top: "%s_perm"
-  permute_param {
-    order: 0
-    order: 2
-    order: 3
-    order: 1
-  }
-}""" % (name, name, name))
-      self.last = name + "_perm"
-    
-    def flatten(self, name):
-      print(
-"""layer {
-  name: "%s_flat"
-  type: "Flatten"
-  bottom: "%s_perm"
-  top: "%s_flat"
-  flatten_param {
-    axis: 1
-  }
-}""" % (name, name, name))
-      self.last = name + "_flat"
-    
-    def mbox_prior(self, name, min_size, max_size, aspect_ratio):
-      min_box = self.input_size * min_size
-      max_box_str = ""
-      aspect_ratio_str = ""
-      if max_size is not None:
-          max_box = self.input_size * max_size
-          max_box_str = "\n    max_size: %.1f" % max_box
-      for ar in aspect_ratio:
-          aspect_ratio_str += "\n    aspect_ratio: %.1f" % ar
-      
-      print(
-"""layer {
-  name: "%s_mbox_priorbox"
-  type: "PriorBox"
-  bottom: "%s"
-  bottom: "data"
-  top: "%s_mbox_priorbox"
-  prior_box_param {
-    min_size: %.1f%s%s
-    flip: true
-    clip: false
-    variance: 0.1
-    variance: 0.1
-    variance: 0.2
-    variance: 0.2
-    offset: 0.5
-  }
-}""" % (name, name, name, float(min_box), max_box_str, aspect_ratio_str))
 
     def mbox_conf(self, bottom, inp, num):
        name = bottom + "_mbox_conf"
-       self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom, ignore_bn=False)
+       self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom)
        self.conv(name, num, 1, bias=True)
        self.permute(name)
        self.flatten(name)
+
     def mbox_loc(self, bottom, inp, num):
        name = bottom + "_mbox_loc"
-       self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom, ignore_bn=False)
+       self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom)
        self.conv(name, num, 1, bias=True)
        self.permute(name)
        self.flatten(name)
@@ -716,35 +514,7 @@ layer {
            self.mbox_prior(bottom, min_size, max_size, [2.0,3.0])
        self.anchors.pop(0)
 
-    def fc(self, name, output):
-      print(
-"""layer {
-  name: "%s"
-  type: "InnerProduct"
-  bottom: "%s"
-  top: "%s"
-  param { lr_mult: 1  decay_mult: 1 }
-  param { lr_mult: 2  decay_mult: 0 }
-  inner_product_param {
-    num_output: %d
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant"  value: 0 }
-  }
-}""" % (name, self.last, name, output))
-      self.last = name
-    
-    def reshape(self, name, output):
-      print(
-"""layer {
-    name: "%s"
-    type: "Reshape"
-    bottom: "%s"
-    top: "%s"
-    reshape_param { shape { dim: -1 dim: %s dim: 1 dim: 1 } }
-}""" % ( name, self.last, name, output))
-      self.last = name
-
-    def generate(self, stage, gen_ssd, size, class_num, nobn, eps, relu6):
+    def generate(self, stage, gen_ssd, size, class_num, eps, relu6, nobn, tfpad):
       self.class_num = class_num
       self.lmdb = FLAGS.lmdb
       if FLAGS.lmdb == "":
@@ -754,15 +524,17 @@ layer {
               self.lmdb = "test_lmdb"
       self.label_map = FLAGS.label_map
       self.stage = stage
-      self.nobn = nobn
       self.eps = eps
       self.relu6 = relu6
+      self.nobn = nobn
+      self.tfpad = tfpad
       if gen_ssd:
           self.input_size = 300
       else:
           self.input_size = 224
       self.size = size
       self.class_num = class_num
+      self.shape["data"] = (self.input_size, self.input_size)
 
       if gen_ssd:
           self.header("MobileNetv2-SSDLite")
@@ -805,6 +577,7 @@ layer {
           self.conv_ssd("layer_19", 3, 512, 256)
           self.conv_ssd("layer_19", 4, 256, 256)
           self.conv_ssd("layer_19", 5, 256, 128)
+          self.nobn = False
           self.mbox("conv_13/expand", 576, 3)
           self.mbox("Conv_1", 1280, 6)
           self.mbox("layer_19_2_2", 512, 6)
@@ -823,69 +596,93 @@ layer {
           self.conv("fc", class_num, 1, 1, 1, True)
           if stage == "train":
              self.classifier_loss()
-
    
 def create_ssd_anchors(num_layers=6,
                        min_scale=0.2,
                        max_scale=0.95):
-  box_specs_list = []
-  scales = [min_scale + (max_scale - min_scale) * i / (num_layers - 1)
-            for i in range(num_layers)] + [1.0]
-  return zip(scales[:-1], scales[1:])
+    box_specs_list = []
+    scales = [min_scale + (max_scale - min_scale) * i / (num_layers - 1)
+              for i in range(num_layers)] + [1.0]
+    return zip(scales[:-1], scales[1:])
+
+def compute_pad(inp, stride, tf=True):
+    H = inp[0]
+    W = inp[1]
+    S = stride
+    F = 3
+    new_width = int(math.ceil(W / float(S)))
+    new_height = int(math.ceil(H / float(S)))
+    pad_needed_height = (new_height - 1)  * S + F - W
+    pad_top = int(pad_needed_height / 2.)
+    pad_down = pad_needed_height - pad_top
+    pad_needed_width = (new_width - 1)  * S + F - W
+    pad_left = int(pad_needed_width / 2.)
+    pad_right = pad_needed_width - pad_left
+    if tf:
+        return ((pad_top, pad_left, pad_right, pad_down), (new_height, new_width))
+    else:
+        return ((1,1,1,1), (new_height, new_width))
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-      '-s','--stage',
-      type=str,
-      default='deploy',
-      help='The stage of prototxt, train|test|deploy.'
-  )
-  parser.add_argument(
-      '-d','--lmdb',
-      type=str,
-      default="",
-      help='The training or testing database'
-  )
-  parser.add_argument(
-      '-l','--label-map',
-      type=str,
-      default="labelmap.prototxt",
-      help='The label map for ssd training.'
-  )
-  parser.add_argument(
-      '--classifier',
-      action='store_true',
-      help='Default generate ssd, if this is set, generate classifier prototxt.'
-  )
-  parser.add_argument(
-      '--size',
-      type=float,
-      default=1.0,
-      help='The size of mobilenet channels, support 1.0, 0.75, 0.5, 0.25.'
-  )
-  parser.add_argument(
-      '-c', '--class-num',
-      type=int,
-      required=True,
-      help='Output class number, include the \'backgroud\' class. e.g. 21 for voc.'
-  )
-  parser.add_argument(
-      '--batchnorm',
-      action='store_true',
-      help='Feature extract layers use batchnorm and scale'
-  )
-  parser.add_argument(
-      '--eps',
-      type=float,
-      default=0.001,
-      help='eps parameter of BatchNorm layers, default is 1e-5'
-  )
-  parser.add_argument(
-      '--relu6',
-      action='store_true',
-      help='replace ReLU layers by ReLU6'
-  )
-  FLAGS, unparsed = parser.parse_known_args()
-  gen = Generator()
-  gen.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num, not FLAGS.batchnorm, FLAGS.eps, FLAGS.relu6)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-s','--stage',
+        type=str,
+        default='deploy',
+        help='The stage of prototxt, train|test|deploy.'
+    )
+    parser.add_argument(
+        '-d','--lmdb',
+        type=str,
+        default="",
+        help='The training or testing database'
+    )
+    parser.add_argument(
+        '-l','--label-map',
+        type=str,
+        default="labelmap.prototxt",
+        help='The label map for ssd training.'
+    )
+    parser.add_argument(
+        '--classifier',
+        action='store_true',
+        help='Default generate ssd, if this is set, generate classifier prototxt.'
+    )
+    parser.add_argument(
+        '--size',
+        type=float,
+        default=1.0,
+        help='The size of mobilenet channels, support 1.0, 0.75, 0.5, 0.25.'
+    )
+    parser.add_argument(
+        '-c', '--class-num',
+        type=int,
+        required=True,
+        help='Output class number, include the \'backgroud\' class. e.g. 21 for voc.'
+    )
+    parser.add_argument(
+        '--eps',
+        type=float,
+        default=0.001,
+        help='eps parameter of BatchNorm layers, default is 1e-5'
+    )
+    parser.add_argument(
+        '--relu6',
+        action='store_true',
+        help='replace ReLU layers by ReLU6'
+    )
+    parser.add_argument(
+        '--tfpad',
+        action='store_true',
+        help='use tensorflow pad=SAME'
+    )
+    parser.add_argument(
+        '--nobn',
+        action='store_true',
+        help='do not use batch_norm, defualt is false'
+    )
+    FLAGS, unparsed = parser.parse_known_args()
+    net_specs = caffe_pb2.NetParameter()
+    net = CaffeNetGenerator(net_specs)
+    net.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num, FLAGS.eps, FLAGS.relu6, FLAGS.nobn, FLAGS.tfpad)
+    print text_format.MessageToString(net_specs, float_format=".5g")
