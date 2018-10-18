@@ -269,6 +269,8 @@ class CaffeNetGenerator:
        layer.top.append(name)
        layer.slice_param.axis = 3
        layer.slice_param.slice_point.append(1)
+       self.need_silence_layer.append(name + "/margin1")
+       self.need_silence_layer.append(name + "/margin2")
     
     def conv(self, name, output, kernel, stride=1, group=1, bias=False, bottom=None):
         layer = self.net.layer.add()
@@ -301,11 +303,10 @@ class CaffeNetGenerator:
         if bias:
             layer.convolution_param.bias_filler.type = "constant"
             layer.convolution_param.bias_filler.value = 0
-        #print "adjust ", name, ",bottom=", bottom
-        pad, output_size = compute_pad(self.shape[bottom], stride)
-        #print "pad=", pad, ",output=", output_size
+        n, c, h, w = self.shape[bottom]
+        pad, output_size = compute_pad((h, w), stride)
         self.top = name
-        self.shape[name] = output_size
+        self.shape[name] = (1, output) + output_size
         if self.tfpad:
             if pad[0] != pad[2] or pad[1] != pad[3]:
                 self.adjust_pad()
@@ -431,6 +432,15 @@ class CaffeNetGenerator:
         for i in [-1, output, 1, 1]:
             layer.reshape_param.shape.dim.append(i)
 
+    def silence(self):
+        if len(self.need_silence_layer) == 0:
+            return
+        layer = self.net.layer.add()
+        layer.name = "silence"
+        layer.type = "Silence"
+        for bottom in self.need_silence_layer:
+            layer.bottom.append(bottom)
+
     def conv_bn_relu(self, name, num, kernel, stride):
       self.conv(name, num, kernel, stride)
       self.bn(name)
@@ -489,23 +499,24 @@ class CaffeNetGenerator:
       self.bn(name2)
       self.relu(name2)
 
-    def mbox_conf(self, bottom, inp, num):
+    def mbox_conf_ssdlite(self, bottom, inp, num):
        name = bottom + "_mbox_conf"
        self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom)
        self.conv(name, num, 1, bias=True)
        self.permute(name)
        self.flatten(name)
 
-    def mbox_loc(self, bottom, inp, num):
+    def mbox_loc_ssdlite(self, bottom, inp, num):
        name = bottom + "_mbox_loc"
        self.conv_depthwise(name + '/depthwise', inp, 1, bottom=bottom)
        self.conv(name, num, 1, bias=True)
        self.permute(name)
        self.flatten(name)
 
-    def mbox(self, bottom, inp, num):
-       self.mbox_loc(bottom, inp, num * 4)
-       self.mbox_conf(bottom, inp, num * self.class_num)
+    def mbox_ssdlite(self, bottom, num):
+       inp = self.shape[bottom][1]
+       self.mbox_loc_ssdlite(bottom, inp, num * 4)
+       self.mbox_conf_ssdlite(bottom, inp, num * self.class_num)
        min_size, max_size = self.anchors[0]
        if self.first_prior:
            self.mbox_prior(bottom, min_size, None, [2.0])
@@ -514,88 +525,193 @@ class CaffeNetGenerator:
            self.mbox_prior(bottom, min_size, max_size, [2.0,3.0])
        self.anchors.pop(0)
 
-    def generate(self, stage, gen_ssd, size, class_num, eps, relu6, nobn, tfpad):
-      self.class_num = class_num
-      self.lmdb = FLAGS.lmdb
-      if FLAGS.lmdb == "":
-          if stage == "train":
-              self.lmdb = "trainval_lmdb"
-          elif stage == "test":
-              self.lmdb = "test_lmdb"
-      self.label_map = FLAGS.label_map
-      self.stage = stage
-      self.eps = eps
-      self.relu6 = relu6
-      self.nobn = nobn
-      self.tfpad = tfpad
-      if gen_ssd:
-          self.input_size = 300
-      else:
-          self.input_size = 224
-      self.size = size
-      self.class_num = class_num
-      self.shape["data"] = (self.input_size, self.input_size)
+    def mbox_conf_ssd(self, bottom, num):
+       name = bottom + "_mbox_conf"
+       self.conv(name, num, 3, bias=True, bottom=bottom)
+       self.permute(name)
+       self.flatten(name)
 
-      if gen_ssd:
-          self.header("MobileNetv2-SSDLite")
-      else:
-          self.header("MobileNetv2")
-      if stage == "train":
-          if gen_ssd:
-              assert(self.lmdb is not None)
-              assert(self.label_map is not None)
-              self.data_train_ssd()
-          else:
-              assert(self.lmdb is not None)
-              self.data_train_classifier()
-      elif stage == "test":
-          self.data_test_ssd()
-      else:
-          self.data_deploy()
-      self.conv_bn_relu_with_factor("Conv", 32, 3, 2)
-      self.conv_depthwise("conv/depthwise", 32, 1)
-      self.conv_project("conv/project", 32, 16)
-      self.conv_block("conv_1", 16,  6, 24, 2, False)
-      self.conv_block("conv_2", 24,  6, 24, 1, True)
-      self.conv_block("conv_3", 24,  6, 32, 2, False)
-      self.conv_block("conv_4", 32,  6, 32, 1, True)
-      self.conv_block("conv_5", 32,  6, 32, 1, True)
-      self.conv_block("conv_6", 32,  6, 64, 2, False)
-      self.conv_block("conv_7", 64,  6, 64, 1, True)
-      self.conv_block("conv_8", 64,  6, 64, 1, True)
-      self.conv_block("conv_9", 64,  6, 64, 1, True)
-      self.conv_block("conv_10", 64,  6, 96, 1, False)
-      self.conv_block("conv_11", 96,  6, 96, 1, True)
-      self.conv_block("conv_12", 96,  6, 96, 1, True)
-      self.conv_block("conv_13", 96,  6, 160, 2, False)
-      self.conv_block("conv_14", 160,  6, 160, 1, True)
-      self.conv_block("conv_15", 160,  6, 160, 1, True)
-      self.conv_block("conv_16", 160,  6, 320, 1, False)
-      self.conv_bn_relu_with_factor("Conv_1", 1280, 1, 1)
-      if gen_ssd is True:
-          self.conv_ssd("layer_19", 2, 1280, 512)
-          self.conv_ssd("layer_19", 3, 512, 256)
-          self.conv_ssd("layer_19", 4, 256, 256)
-          self.conv_ssd("layer_19", 5, 256, 128)
-          self.nobn = False
-          self.mbox("conv_13/expand", 576, 3)
-          self.mbox("Conv_1", 1280, 6)
-          self.mbox("layer_19_2_2", 512, 6)
-          self.mbox("layer_19_2_3", 256, 6)
-          self.mbox("layer_19_2_4", 256, 6)
-          self.mbox("layer_19_2_5", 128, 6)
-          self.concat_boxes(['conv_13/expand', 'Conv_1', 'layer_19_2_2', 'layer_19_2_3', 'layer_19_2_4', 'layer_19_2_5'])
-          if stage == "train":
-             self.ssd_loss()
-          elif stage == "deploy":
-             self.ssd_predict()
-          else:
-             self.ssd_test()
-      else:
-          self.ave_pool("pool")
-          self.conv("fc", class_num, 1, 1, 1, True)
-          if stage == "train":
-             self.classifier_loss()
+    def mbox_loc_ssd(self, bottom, num):
+       name = bottom + "_mbox_loc"
+       self.conv(name, num, 3, bias=True, bottom=bottom)
+       self.permute(name)
+       self.flatten(name)
+
+    def mbox_ssd(self, bottom, num):
+       self.mbox_loc_ssd(bottom, num * 4)
+       self.mbox_conf_ssd(bottom, num * self.class_num)
+       min_size, max_size = self.anchors[0]
+       if self.first_prior:
+           self.mbox_prior(bottom, min_size, None, [2.0])
+           self.first_prior = False
+       else:
+           self.mbox_prior(bottom, min_size, max_size, [2.0,3.0])
+       self.anchors.pop(0)
+
+    def mbox(self, bottom, num):
+       if self.islite:
+           self.mbox_ssdlite(bottom, num)
+       else:
+           self.mbox_ssd(bottom, num)
+
+    def init(self, FLAGS):
+        self.class_num = FLAGS.class_num
+        self.lmdb = FLAGS.lmdb
+        self.stage = FLAGS.stage
+        if FLAGS.lmdb == "":
+            if self.stage == "train":
+                self.lmdb = "trainval_lmdb"
+            elif self.stage == "test":
+                self.lmdb = "test_lmdb"
+        self.label_map = FLAGS.label_map
+        self.eps = FLAGS.eps
+        self.relu6 = FLAGS.relu6
+        self.nobn = FLAGS.nobn
+        self.tfpad = FLAGS.tfpad
+        self.gen_ssd = not FLAGS.classifier
+        if self.gen_ssd:
+            self.input_size = 300
+        else:
+            self.input_size = 224
+        self.size = FLAGS.size
+        if FLAGS.type == "ssdlite":
+            self.islite = True
+        else:
+            self.islite = False
+        self.shape["data"] = (1, 3, self.input_size, self.input_size)
+        self.need_silence_layer = []
+
+    def gen_mobile_ssd(self):
+        if self.gen_ssd:
+            self.header("MobileNet-SSD")
+        else:
+            self.header("MobileNet")
+        if self.stage == "train":
+            if gen_ssd:
+                assert(self.lmdb is not None)
+                assert(self.label_map is not None)
+                self.data_train_ssd()
+            else:
+                assert(self.lmdb is not None)
+                self.data_train_classifier()
+        elif self.stage == "test":
+            self.data_test_ssd()
+        else:
+            self.data_deploy()
+        self.conv_bn_relu_with_factor("conv0", 32, 3, 2)
+        self.conv_dw_pw("conv1", 32,  64, 1)
+        self.conv_dw_pw("conv2", 64, 128, 2)
+        self.conv_dw_pw("conv3", 128, 128, 1)
+        self.conv_dw_pw("conv4", 128, 256, 2)
+        self.conv_dw_pw("conv5", 256, 256, 1)
+        self.conv_dw_pw("conv6", 256, 512, 2) 
+        self.conv_dw_pw("conv7", 512, 512, 1)
+        self.conv_dw_pw("conv8", 512, 512, 1)
+        self.conv_dw_pw("conv9", 512, 512, 1)
+        self.conv_dw_pw("conv10",512, 512, 1)
+        self.conv_dw_pw("conv11",512, 512, 1)
+        self.conv_dw_pw("conv12",512, 1024, 2) 
+        self.conv_dw_pw("conv13",1024, 1024, 1) 
+        if self.gen_ssd:
+            self.conv_bn_relu("conv14_1", 256, 1, 1)
+            self.conv_bn_relu("conv14_2", 512, 3, 2)
+            self.conv_bn_relu("conv15_1", 128, 1, 1)
+            self.conv_bn_relu("conv15_2", 256, 3, 2)
+            self.conv_bn_relu("conv16_1", 128, 1, 1)
+            self.conv_bn_relu("conv16_2", 256, 3, 2)
+            self.conv_bn_relu("conv17_1", 64,  1, 1)
+            self.conv_bn_relu("conv17_2", 128, 3, 2)
+            self.mbox("conv11", 3)
+            self.mbox("conv13", 6)
+            self.mbox("conv14_2", 6)
+            self.mbox("conv15_2", 6)
+            self.mbox("conv16_2", 6)
+            self.mbox("conv17_2", 6)
+            self.concat_boxes(['conv11', 'conv13', 'conv14_2', 'conv15_2', 'conv16_2', 'conv17_2'])
+            if self.stage == "train":
+               self.ssd_loss()
+            elif self.stage == "deploy":
+               self.ssd_predict()
+            else:
+               self.ssd_test()
+        else:
+            self.ave_pool("pool")
+            self.conv("fc", self.class_num, 1, 1, 1, True)
+            if self.stage == "train":
+               self.classifier_loss()
+
+    def gen_mobilev2_ssd(self):
+        if self.gen_ssd:
+            self.header("MobileNetv2-SSDLite")
+        else:
+            self.header("MobileNetv2")
+        if self.stage == "train":
+            if self.gen_ssd:
+                assert(self.lmdb is not None)
+                assert(self.label_map is not None)
+                self.data_train_ssd()
+            else:
+                assert(self.lmdb is not None)
+                self.data_train_classifier()
+        elif self.stage == "test":
+            self.data_test_ssd()
+        else:
+            self.data_deploy()
+        self.conv_bn_relu_with_factor("Conv", 32, 3, 2)
+        self.conv_depthwise("conv/depthwise", 32, 1)
+        self.conv_project("conv/project", 32, 16)
+        self.conv_block("conv_1", 16,  6, 24, 2, False)
+        self.conv_block("conv_2", 24,  6, 24, 1, True)
+        self.conv_block("conv_3", 24,  6, 32, 2, False)
+        self.conv_block("conv_4", 32,  6, 32, 1, True)
+        self.conv_block("conv_5", 32,  6, 32, 1, True)
+        self.conv_block("conv_6", 32,  6, 64, 2, False)
+        self.conv_block("conv_7", 64,  6, 64, 1, True)
+        self.conv_block("conv_8", 64,  6, 64, 1, True)
+        self.conv_block("conv_9", 64,  6, 64, 1, True)
+        self.conv_block("conv_10", 64,  6, 96, 1, False)
+        self.conv_block("conv_11", 96,  6, 96, 1, True)
+        self.conv_block("conv_12", 96,  6, 96, 1, True)
+        self.conv_block("conv_13", 96,  6, 160, 2, False)
+        self.conv_block("conv_14", 160,  6, 160, 1, True)
+        self.conv_block("conv_15", 160,  6, 160, 1, True)
+        self.conv_block("conv_16", 160,  6, 320, 1, False)
+        self.conv_bn_relu_with_factor("Conv_1", 1280, 1, 1)
+        if self.gen_ssd is True:
+            self.conv_ssd("layer_19", 2, 1280, 512)
+            self.conv_ssd("layer_19", 3, 512, 256)
+            self.conv_ssd("layer_19", 4, 256, 256)
+            self.conv_ssd("layer_19", 5, 256, 128)
+            self.silence()
+            self.nobn = False
+            self.mbox("conv_13/expand", 3)
+            self.mbox("Conv_1", 6)
+            self.mbox("layer_19_2_2", 6)
+            self.mbox("layer_19_2_3", 6)
+            self.mbox("layer_19_2_4", 6)
+            self.mbox("layer_19_2_5", 6)
+            self.concat_boxes(['conv_13/expand', 'Conv_1', 'layer_19_2_2', 'layer_19_2_3', 'layer_19_2_4', 'layer_19_2_5'])
+            if self.stage == "train":
+               self.ssd_loss()
+            elif self.stage == "deploy":
+               self.ssd_predict()
+            else:
+               self.ssd_test()
+        else:
+            self.ave_pool("pool")
+            self.conv("fc", self.class_num, 1, 1, 1, True)
+            if self.stage == "train":
+               self.classifier_loss()
+
+    def generate(self, FLAGS):
+        self.init(FLAGS)
+        if FLAGS.version == "1":
+            self.gen_mobile_ssd()
+        elif FLAGS.version == "2":
+            self.gen_mobilev2_ssd()
+        else:
+            print "version " + FLAGS.version + " is not supported"
+            exit(-1)
    
 def create_ssd_anchors(num_layers=6,
                        min_scale=0.2,
@@ -681,8 +797,20 @@ if __name__ == '__main__':
         action='store_true',
         help='do not use batch_norm, defualt is false'
     )
+    parser.add_argument(
+        '-v','--version',
+        type=str,
+        default="2",
+        help='MobileNet version, 1|2'
+    )
+    parser.add_argument(
+        '-t','--type',
+        type=str,
+        default="ssdlite",
+        help='ssd type, ssd|ssdlite'
+    )
     FLAGS, unparsed = parser.parse_known_args()
     net_specs = caffe_pb2.NetParameter()
     net = CaffeNetGenerator(net_specs)
-    net.generate(FLAGS.stage, not FLAGS.classifier, FLAGS.size, FLAGS.class_num, FLAGS.eps, FLAGS.relu6, FLAGS.nobn, FLAGS.tfpad)
+    net.generate(FLAGS)
     print text_format.MessageToString(net_specs, float_format=".5g")
